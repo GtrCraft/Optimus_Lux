@@ -78,6 +78,7 @@ static const struct kernel_param_ops param_ops_num_clusters = {
 };
 device_param_cb(num_clusters, &param_ops_num_clusters, NULL, 0644);
 
+#ifdef CONFIG_MSM_PERFORMANCE_HOTPLUG_ON
 static int set_max_cpus(const char *buf, const struct kernel_param *kp)
 {
 	unsigned int i, ntokens = 0;
@@ -138,7 +139,6 @@ static const struct kernel_param_ops param_ops_max_cpus = {
 	.get = get_max_cpus,
 };
 
-#ifdef CONFIG_MSM_PERFORMANCE_HOTPLUG_ON
 device_param_cb(max_cpus, &param_ops_max_cpus, NULL, 0644);
 #endif
 
@@ -192,6 +192,7 @@ static const struct kernel_param_ops param_ops_managed_cpus = {
 };
 device_param_cb(managed_cpus, &param_ops_managed_cpus, NULL, 0644);
 
+#ifdef CONFIG_MSM_PERFORMANCE_HOTPLUG_ON
 /* Read-only node: To display all the online managed CPUs */
 static int get_managed_online_cpus(char *buf, const struct kernel_param *kp)
 {
@@ -224,7 +225,6 @@ static const struct kernel_param_ops param_ops_managed_online_cpus = {
 	.get = get_managed_online_cpus,
 };
 
-#ifdef CONFIG_MSM_PERFORMANCE_HOTPLUG_ON
 device_param_cb(managed_online_cpus, &param_ops_managed_online_cpus,
 							NULL, 0444);
 #endif
