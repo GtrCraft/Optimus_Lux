@@ -232,7 +232,7 @@ static void power_supply_callback(struct power_supply *psy)
 		bcl_config_vph_adc(gbcl, BCL_HIGH_THRESHOLD_TYPE);
 }
 
-static void __ref bcl_handle_hotplug(void)
+/*static void __ref bcl_handle_hotplug(void)
 {
 	int ret = 0, _cpu = 0;
 
@@ -277,7 +277,7 @@ static void __ref bcl_handle_hotplug(void)
 handle_hotplug_exit:
 	mutex_unlock(&bcl_hotplug_mutex);
 	return;
-}
+}*/
 static int __ref bcl_cpu_ctrl_callback(struct notifier_block *nfb,
 	unsigned long action, void *hcpu)
 {
@@ -369,7 +369,7 @@ static void battery_monitor_work(struct work_struct *work)
 	if (gbcl->bcl_mode == BCL_DEVICE_ENABLED) {
 		bcl->btm_mode = BCL_VPH_MONITOR_MODE;
 		update_cpu_freq();
-		bcl_handle_hotplug();
+		//bcl_handle_hotplug();
 		bcl_get_battery_voltage(&vbatt);
 		pr_debug("vbat is %d\n", vbatt);
 		if (bcl_vph_state == BCL_LOW_THRESHOLD) {
