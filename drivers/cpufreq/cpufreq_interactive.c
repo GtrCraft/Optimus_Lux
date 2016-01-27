@@ -85,7 +85,7 @@ static unsigned int default_target_loads[] = {DEFAULT_TARGET_LOAD};
 static unsigned int default_above_hispeed_delay[] = {
 	DEFAULT_ABOVE_HISPEED_DELAY };
 
-#define DEFAULT_SCREEN_OFF_MAX 1555200
+#define DEFAULT_SCREEN_OFF_MAX 800000
 static unsigned long screen_off_max = DEFAULT_SCREEN_OFF_MAX;
 
 struct cpufreq_interactive_tunables {
@@ -1182,7 +1182,7 @@ static ssize_t store_screen_off_maxfreq(struct cpufreq_interactive_tunables *tun
 
 	ret = strict_strtoul(buf, 0, &val);
 	if (ret < 0) return ret;
-	if (val < 384000) screen_off_max = DEFAULT_SCREEN_OFF_MAX;
+	if (val < 400000) screen_off_max = DEFAULT_SCREEN_OFF_MAX;
 	else screen_off_max = val;
 	return count;
 }
