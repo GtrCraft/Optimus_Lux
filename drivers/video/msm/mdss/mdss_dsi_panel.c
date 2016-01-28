@@ -865,7 +865,7 @@ static int mdss_dsi_panel_off(struct mdss_panel_data *pdata)
 
 	mdss_dsi_panel_off_in_prog_notify(pdata, pinfo);
 
-	mdss_screen_on = false
+	mdss_screen_on = false;
 
 end:
 	pinfo->blank_state = MDSS_PANEL_BLANK_BLANK;
