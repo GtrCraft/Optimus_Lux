@@ -83,10 +83,10 @@ static unsigned int default_above_hispeed_delay[] = {
 struct cpufreq_impulse_tunables {
 	int usage_count;
 	/* Hi speed to bump to from lo speed when load burst (default max) */
-#define HISPEED_FREQ 960000;
+#define HISPEED_FREQ 1152000;
 	unsigned int hispeed_freq;
 	/* Go to hi speed when CPU load at or above this value. */
-#define DEFAULT_GO_HISPEED_LOAD 90
+#define DEFAULT_GO_HISPEED_LOAD 95
 	unsigned long go_hispeed_load;
 /* Go to lowest speed when CPU load at or below this value. */
 #define DEFAULT_GO_LOWSPEED_LOAD 10
