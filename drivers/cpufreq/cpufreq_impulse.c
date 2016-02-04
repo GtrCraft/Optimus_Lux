@@ -130,9 +130,8 @@ struct cpufreq_impulse_tunables {
 	bool io_is_busy;
 
 	/* scheduler input related flags */
-#define DEFAULT_USE_SCHED_LOAD 1
 	bool use_sched_load;
-#define DEFAULT_USE_MIGRATION_NOTIF 1
+
 	bool use_migration_notif;
 
 	/*
@@ -150,6 +149,7 @@ struct cpufreq_impulse_tunables {
 	unsigned int max_freq_hysteresis;
 
 	/* Improves frequency selection for more energy */
+#define DEFAULT_POWERSAVE_BIAS 1
 	bool powersave_bias;
 };
 
@@ -1530,8 +1530,7 @@ static struct cpufreq_impulse_tunables *alloc_tunable(
 	tunables->timer_slack_val = DEFAULT_TIMER_SLACK;
 	tunables->io_is_busy = DEFAULT_IO_IS_BUSY;
 	tunables->max_freq_hysteresis = DEFAULT_MAX_FREQ_HYSTERESIS;
-	tunables->use_sched_load = DEFAULT_USE_SCHED_LOAD;
-	tunables->use_migration_notif = DEFAULT_USE_MIGRATION_NOTIF;
+	tunables->powersave_bias = DEFAULT_POWERSAVE_BIAS;
 	tunables->hispeed_freq = HISPEED_FREQ;
 
 	spin_lock_init(&tunables->target_loads_lock);
