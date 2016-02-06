@@ -356,7 +356,7 @@ KERNELFLAGS     = -mcpu=cortex-a53 -mtune=cortex-a53 -mfpu=neon-vfpv4 -marm -mun
 MODFLAGS        = -DMODULE $(KERNELFLAGS)
 CFLAGS_MODULE   = $(MODFLAGS)
 AFLAGS_MODULE   = $(MODFLAGS)
-LDFLAGS_MODULE  =
+LDFLAGS_MODULE  = --strip-debug
 CFLAGS_KERNEL	= $(KERNELFLAGS)
 AFLAGS_KERNEL	= $(KERNELFLAGS)
 CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
