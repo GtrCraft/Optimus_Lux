@@ -352,7 +352,7 @@ endif
 
 CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 		  -Wbitwise -Wno-return-void $(CF)
-KERNELFLAGS     = -mcpu=cortex-a53 -mtune=cortex-a53 -mfpu=neon-vfpv4 -marm -munaligned-access  -fmodulo-sched -fmodulo-sched-allow-regmoves -funswitch-loops -fpredictive-commoning -fgcse-after-reload -fno-aggressive-loop-optimizations
+KERNELFLAGS     = -mfpu=neon-vfpv4 -marm -munaligned-access  -fmodulo-sched -fmodulo-sched-allow-regmoves -funswitch-loops -fpredictive-commoning -fgcse-after-reload -fno-aggressive-loop-optimizations
 MODFLAGS        = -DMODULE $(KERNELFLAGS)
 CFLAGS_MODULE   = $(MODFLAGS)
 AFLAGS_MODULE   = $(MODFLAGS)
