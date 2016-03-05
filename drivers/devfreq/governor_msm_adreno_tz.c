@@ -20,7 +20,7 @@
 #include <linux/ftrace.h>
 #include <linux/mm.h>
 #include <linux/msm_adreno_devfreq.h>
-#include <linux/state_notifier.h>
+#include <linux/powersuspend.h>
 #include <asm/cacheflush.h>
 #include <soc/qcom/scm.h>
 #include "governor.h"
@@ -61,6 +61,9 @@ static DEFINE_SPINLOCK(tz_lock);
 
 /* Boolean to detect if pm has entered suspend mode */
 static bool suspended;
+
+/* Boolean to detect if panel has gone off */
+static bool power_suspended = false;
 
 struct msm_adreno_extended_profile *partner_gpu_profile;
 static void do_partner_start_event(struct work_struct *work);
@@ -204,7 +207,7 @@ static int tz_get_target_freq(struct devfreq *devfreq, unsigned long *freq,
 	 * Force to use & record as min freq when system has
 	 * entered pm-suspend or screen-off state.
 	 */
-	if (suspended || state_suspended) {
+	if (suspended || power_suspended) {
 		*freq = devfreq->profile->freq_table[devfreq->profile->max_state - 1];
 		return 0;
 	}
@@ -489,9 +492,27 @@ static struct devfreq_governor msm_adreno_tz = {
 	.event_handler = tz_handler,
 };
 
+static void tz_early_suspend(struct power_suspend *handler)
+{
+	power_suspended = true;
+	return;
+}
+
+static void tz_late_resume(struct power_suspend *handler)
+{
+	power_suspended = false;
+	return;
+}
+
+static struct power_suspend tz_power_suspend = {
+	.suspend = tz_early_suspend,
+	.resume = tz_late_resume,
+};
+
 static int __init msm_adreno_tz_init(void)
 {
-	return devfreq_add_governor(&msm_adreno_tz);
+       register_power_suspend(&tz_power_suspend);
+       return devfreq_add_governor(&msm_adreno_tz);
 }
 subsys_initcall(msm_adreno_tz_init);
 
