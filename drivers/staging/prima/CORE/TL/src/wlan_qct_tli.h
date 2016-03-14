@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013, 2015 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -169,6 +169,8 @@ when        who    what, where, why
 #define WLANTL_CTRL_FRAME_TYPE       0x10
 #define WLANTL_DATA_FRAME_TYPE       0x20
 
+#define WLANTL_MGMT_PROBE_REQ_FRAME_TYPE    0x04
+
 /*Value of the data type field in the 802.11 frame */
 #define WLANTL_80211_DATA_TYPE         0x02
 #define WLANTL_80211_DATA_QOS_SUBTYPE  0x08
@@ -279,6 +281,8 @@ typedef enum
   WLANTL_TX_FATAL_ERROR = 7,
 
   WLANTL_TX_FW_DEBUG = 8,
+
+  WLANTL_TX_KICKDXE = 9,
 
   WLANTL_TX_MAX
 }WLANTL_TxSignalsType;
@@ -869,6 +873,8 @@ typedef struct
   /* Current served station ID in round-robin method to traverse all stations.*/
   WLANTL_ACEnumType uCurServedAC;
 
+  WLANTL_SpoofMacAddr   spoofMacAddr;
+
   /* How many weights have not been served in current AC. */
   v_U8_t ucCurLeftWeight;
 
@@ -890,6 +896,9 @@ typedef struct
   v_BOOL_t                  isBMPS;
   /* Whether WDA_DS_TX_START_XMIT msg is pending or not */
   v_BOOL_t   isTxTranmitMsgPending;
+  WLANTL_MonRxCBType           pfnMonRx;
+  v_BOOL_t              isConversionReq;
+
 }WLANTL_CbType;
 
 /*==========================================================================
@@ -1386,9 +1395,15 @@ WLANTL_Translate80211To8023Header
   v_U8_t          ucHeaderLen,
   WLANTL_CbType*  pTLCb,
   v_U8_t          ucSTAId,
-  v_BOOL_t	  bForwardIAPPwithLLC
+  v_BOOL_t       bForwardIAPPwithLLC
 );
 
+VOS_STATUS
+WLANTL_MonTranslate80211To8023Header
+(
+  vos_pkt_t*      vosDataBuff,
+  WLANTL_CbType*  pTLCb
+);
 /*==========================================================================
   FUNCTION    WLANTL_FindFrameTypeBcMcUc
 

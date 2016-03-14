@@ -1,6 +1,11 @@
 MODNAME := wlan
 WLAN_ROOT := drivers/staging/prima
 
+# To enable CONFIG_QCOM_ESE_UPLOAD, dependent config
+# CONFIG_QCOM_ESE must be enabled.
+CONFIG_QCOM_ESE := n
+CONFIG_QCOM_ESE_UPLOAD := n
+
 # Feature flags which are not (currently) configurable via Kconfig
 
 #Whether to build debug version
@@ -14,9 +19,6 @@ PANIC_ON_BUG := 1
 
 #Re-enable wifi on WDI timeout
 RE_ENABLE_WIFI_ON_WDI_TIMEOUT := 0
-
-#Measure Roam Delay
-MEASURE_ROAM_TIME_DELAY := 0
 
 ifeq ($(CONFIG_CFG80211),y)
 HAVE_CFG80211 := 1
@@ -254,6 +256,9 @@ SME_P2P_OBJS = $(SME_SRC_DIR)/p2p/p2p_Api.o
 
 SME_RRM_OBJS := $(SME_SRC_DIR)/rrm/sme_rrm.o
 
+SME_NAN_OBJS = $(SME_SRC_DIR)/nan/nan_Api.o
+
+
 SME_OBJS :=	$(SME_BTC_OBJS) \
 		$(SME_CCM_OBJS) \
 		$(SME_CMN_OBJS) \
@@ -262,7 +267,8 @@ SME_OBJS :=	$(SME_BTC_OBJS) \
 		$(SME_P2P_OBJS) \
 		$(SME_PMC_OBJS) \
 		$(SME_QOS_OBJS) \
-		$(SME_RRM_OBJS)
+		$(SME_RRM_OBJS) \
+		$(SME_NAN_OBJS)
 
 ############ SVC ############
 SVC_DIR :=	CORE/SVC
@@ -514,10 +520,6 @@ CDEFINES += -DWCN_PRONTO
 CDEFINES += -DWCN_PRONTO_V1
 endif
 
-ifeq ($(ENABLE_DRIVER_VERBOSE),1)
-CDEFINES += -DENABLE_DRIVER_VERBOSE
-endif
-
 ifeq ($(BUILD_DEBUG_VERSION),1)
 CDEFINES +=	-DWLAN_DEBUG \
 		-DTRACE_RECORD \
@@ -552,15 +554,7 @@ endif
 #normally, TDLS negative behavior is not needed
 ifeq ($(CONFIG_QCOM_TDLS),y)
 CDEFINES += -DFEATURE_WLAN_TDLS
-ifeq ($(BUILD_DEBUG_VERSION),1)
-CDEFINES += -DWLAN_FEATURE_TDLS_DEBUG
-endif
 CDEFINES += -DCONFIG_TDLS_IMPLICIT
-#CDEFINES += -DFEATURE_WLAN_TDLS_NEGATIVE
-#Code under FEATURE_WLAN_TDLS_INTERNAL is ported from volans, This code
-#is not tested only verifed that it compiles. This is not required for
-#supplicant based implementation
-#CDEFINES += -DFEATURE_WLAN_TDLS_INTERNAL
 endif
 
 ifeq ($(CONFIG_PRIMA_WLAN_BTAMP),y)
@@ -569,9 +563,6 @@ endif
 
 ifeq ($(CONFIG_PRIMA_WLAN_LFR),y)
 CDEFINES += -DFEATURE_WLAN_LFR
-#Begin fjdw67 Motorola, IKJB42MAIN-6385 - LFR roaming instrumentation
-CDEFINES += -DFEATURE_WLAN_LFR_METRICS
-#End IKJB42MAIN-6385
 endif
 
 ifeq ($(CONFIG_PRIMA_WLAN_OKC),y)
@@ -592,13 +583,7 @@ endif
 CDEFINES += -DWLAN_AUTOGEN_MACADDR_FEATURE
 
 # Moto read MACs from boot params instead of NV file
-ifeq ($(BOARD_PLATFORM), msm8974)
-CDEFINES += -DWLAN_NV_OTA_UPGRADE
-else ifeq ($(BOARD_PLATFORM), msm8226)
-CDEFINES += -DWLAN_NV_OTA_UPGRADE
-else
 CDEFINES += -DMOTO_UTAGS_MAC
-endif
 
 ifeq ($(CONFIG_WLAN_FEATURE_11W),y)
 CDEFINES += -DWLAN_FEATURE_11W
@@ -618,13 +603,8 @@ ifeq ($(CONFIG_ENABLE_LINUX_REG), y)
 CDEFINES += -DCONFIG_ENABLE_LINUX_REG
 endif
 
-ifeq ($(MEASURE_ROAM_TIME_DELAY),1)
-CDEFINES += -DDEBUG_ROAM_DELAY
-endif
-
 CDEFINES += -DFEATURE_WLAN_CH_AVOID
-
-CDEFINES += -DHAVE_CBC_DONE
+CDEFINES += -DWLAN_FEATURE_AP_HT40_24G
 
 # Some kernel include files are being moved.  Check to see if
 # the old version of the files are present

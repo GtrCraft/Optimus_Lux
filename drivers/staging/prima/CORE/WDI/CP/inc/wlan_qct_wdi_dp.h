@@ -43,8 +43,6 @@ DESCRIPTION
   module to be used by the DAL Data Path Core. 
   
       
-  Copyright (c) 2010 QUALCOMM Incorporated. All Rights Reserved.
-  Qualcomm Confidential and Proprietary
 ===========================================================================*/
 
 
@@ -430,7 +428,8 @@ WDI_FillTxBd
     wpt_uint8              ucProtMgmtFrame,
     wpt_uint32             uTimeStamp,
     wpt_uint8              isEapol,
-    wpt_uint8*             staIndex
+    wpt_uint8*             staIndex,
+    wpt_uint32             txBdToken
 );
 
 /**

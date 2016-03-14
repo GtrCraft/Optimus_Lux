@@ -124,11 +124,12 @@ limProcessDisassocFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tpPESession
     // Get reasonCode from Disassociation frame body
     reasonCode = sirReadU16(pBody);
 
-    PELOG2(limLog(pMac, LOGE,
-        FL("Received Disassoc frame for Addr: "MAC_ADDRESS_STR"(mlm state=%s, sme state=%d),"
+    limLog(pMac, LOGE,
+        FL("Received Disassoc frame for Addr: "MAC_ADDRESS_STR
+        "(mlm state=%s, sme state=%d),"
         "with reason code %d from "MAC_ADDRESS_STR), MAC_ADDR_ARRAY(pHdr->da),
-        limMlmStateStr(psessionEntry->limMlmState), psessionEntry->limSmeState, reasonCode,
-        MAC_ADDR_ARRAY(pHdr->sa));)
+        limMlmStateStr(psessionEntry->limMlmState), psessionEntry->limSmeState,
+        reasonCode, MAC_ADDR_ARRAY(pHdr->sa));
 
     /**
    * Extract 'associated' context for STA, if any.
@@ -215,10 +216,6 @@ limProcessDisassocFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tpPESession
                 (psessionEntry->limSmeState != eLIM_SME_WT_ASSOC_STATE)  &&
                 (psessionEntry->limSmeState != eLIM_SME_WT_REASSOC_STATE) ))
     {
-        PELOGE(limLog(pMac, LOGE,
-               FL("received Disassoc with reason code= %d disassoc frame rssi = "
-                "%d from "MAC_ADDRESS_STR), reasonCode,
-                (uint)abs((tANI_S8)WDA_GET_RX_RSSI_DB(pRxPacketInfo)),MAC_ADDR_ARRAY(pHdr->sa));)
         switch (reasonCode)
         {
             case eSIR_MAC_UNSPEC_FAILURE_REASON:
@@ -279,8 +276,10 @@ limProcessDisassocFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tpPESession
          * and received Disassociation frame. Log and Ignore.
          */
         PELOGE(limLog(pMac, LOGE,
-               FL("received Disassoc frame in state %d from "MAC_ADDRESS_STR),
-               pStaDs->mlmStaContext.mlmState, MAC_ADDR_ARRAY(pHdr->sa));)
+               FL("received Disassoc frame in state %d from "MAC_ADDRESS_STR
+               ",isDisassocDeauthInProgress : %d\n"),
+               pStaDs->mlmStaContext.mlmState, MAC_ADDR_ARRAY(pHdr->sa),
+               pStaDs->isDisassocDeauthInProgress);)
 
         return;
     } 

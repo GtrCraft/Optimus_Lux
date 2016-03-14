@@ -47,6 +47,8 @@
 #include "vos_nvitem.h"
 #include "wlan_qct_tl.h"
 
+#include "csrApi.h"
+
 #ifdef WLAN_FEATURE_NEIGHBOR_ROAMING
 #include "csrNeighborRoam.h"
 #endif
@@ -404,7 +406,7 @@ typedef struct tagScanCmd
         tCsrBGScanRequest bgScanRequest;
     }u;
     //This flag will be set while aborting the scan due to band change
-    tANI_BOOLEAN            abortScanDueToBandChange;
+     eCsrAbortReason        abortScanIndication;
 }tScanCmd;
 
 typedef struct tagRoamCmd
@@ -672,6 +674,14 @@ typedef struct tagCsrConfig
     tANI_BOOLEAN initialScanSkipDFSCh;
     tANI_BOOLEAN ignorePeerErpInfo;
     tANI_BOOLEAN sendDeauthBeforeCon;
+#ifdef WLAN_FEATURE_AP_HT40_24G
+    tANI_BOOLEAN apHT40_24GEnabled;
+    tANI_U32 channelBondingAPMode24GHz; // Use for SAP/P2P GO 2.4GHz channel Bonding
+#endif
+    tANI_U32 nOBSSScanWidthTriggerInterval;
+    tANI_U8 roamDelayStatsEnabled;
+    tANI_BOOLEAN ignorePeerHTopMode;
+    tANI_BOOLEAN disableP2PMacSpoofing;
 }tCsrConfig;
 
 typedef struct tagCsrChannelPowerInfo
@@ -717,7 +727,6 @@ typedef struct tagCsrScanStruct
     vos_timer_t hTimerStaApConcTimer;
 #endif
     vos_timer_t hTimerIdleScan;
-    vos_timer_t hTimerResultAging;
     vos_timer_t hTimerResultCfgAging;
     tPalTimerHandle hTimerBgScan;
     //changes on every scan, it is used as a flag for whether 11d info is found on every scan
@@ -782,7 +791,7 @@ typedef struct tagCsrScanStruct
     /*Customer wants to optimize the scan time. Avoiding scans(passive) on DFS
     * channels while swipping through both bands can save some time
     * (apprx 1.3 sec) */
-    tANI_BOOLEAN fEnableDFSChnlScan;
+    tANI_U8 fEnableDFSChnlScan;
 
     /*
     * To enable/disable scanning only 2.4Ghz channels on first scan
@@ -801,27 +810,6 @@ typedef struct tagCsrScanStruct
     eCsrBand  scanBandPreference;  //This defines the band perference for scan
     bool fcc_constraint;
 }tCsrScanStruct;
-
-#ifdef FEATURE_WLAN_TDLS_INTERNAL
-/*
- * struct to carry TDLS discovery info..
- */
-typedef struct sCsrTdlsContext
-{
-    tDblLinkList tdlsPotentialPeerList ;
-    tANI_U16 tdlsCommonFlag ;
-    tANI_U16 tdlsCommonState ;
-    tANI_U16 tdlsPeerCount ;
-}tCsrTdlsCtxStruct;
-
-typedef struct sCsrTdlsPeerLinkInfo
-{
-    tListElem tdlsPeerStaLink ;
-    tSirTdlsPeerInfo tdlsDisPeerInfo ;
-}tCsrTdlsPeerLinkinfo ;
-#endif
-
-
 
 
 //Save the connected information. This structure + connectedProfile
@@ -901,7 +889,8 @@ typedef struct tagCsrRoamSession
     tCsrRoamConnectedInfo connectedInfo;
     tCsrRoamProfile *pCurRoamProfile;
     tSirBssDescription *pConnectBssDesc;
-    tANI_U16 NumPmkidCache;
+    tANI_U16 NumPmkidCache; /* valid no. of pmkid in the cache */
+    tANI_U16 CurCacheIndex; /* the index in pmkidcache to write next to */
     tPmkidCacheInfo PmkidCacheInfo[CSR_MAX_PMKID_ALLOWED];
     tANI_U8 cJoinAttemps;
     //This may or may not have the up-to-date valid channel list
