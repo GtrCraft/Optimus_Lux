@@ -352,7 +352,16 @@ endif
 
 CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 		  -Wbitwise -Wno-return-void $(CF)
-KERNELFLAGS     = -mfpu=neon-vfpv4 -marm -munaligned-access  -fmodulo-sched -fmodulo-sched-allow-regmoves -funswitch-loops -fpredictive-commoning -fgcse-after-reload -fno-aggressive-loop-optimizations
+KERNELFLAGS     = -mcpu=cortex-a53 -mtune=cortex-a53 -marm -munaligned-access \
+                  -ffast-math -fgcse-after-reload -fgcse-lm -fgcse-sm \
+  		  -fgraphite -fgraphite-identity -floop-block -floop-flatten \
+ 		  -floop-interchange -floop-parallelize-all -floop-strip-mine \
+ 		  -fmodulo-sched -fmodulo-sched-allow-regmoves \
+ 		  -fno-aggressive-loop-optimizations -fno-delete-null-pointer-checks \
+ 		  -fpredictive-commoning -fsched-spec-load -fsingle-precision-constant \
+		  -ftree-loop-distribute-patterns -ftree-loop-linear -ftree-loop-vectorize \
+                  -ftree-partial-pre -ftree-slp-vectorize -funswitch-loops -fvect-cost-model
+
 MODFLAGS        = -DMODULE $(KERNELFLAGS)
 CFLAGS_MODULE   = $(MODFLAGS)
 AFLAGS_MODULE   = $(MODFLAGS)
@@ -386,11 +395,10 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -Werror-implicit-function-declaration \
 		   -Wno-format-security \
 		   -fno-delete-null-pointer-checks \
-                   $(KERNELFLAGS) \
-                   -std=gnu89 
+                   -std=gnu89 $(KERNELFLAGS)
 
-KBUILD_AFLAGS_KERNEL := 
-KBUILD_CFLAGS_KERNEL := 
+KBUILD_AFLAGS_KERNEL :=
+KBUILD_CFLAGS_KERNEL :=
 KBUILD_AFLAGS   := -D__ASSEMBLY__
 KBUILD_AFLAGS_MODULE  := -DMODULE
 KBUILD_CFLAGS_MODULE  := -DMODULE
