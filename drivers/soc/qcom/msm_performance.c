@@ -437,7 +437,7 @@ static struct notifier_block perf_cpufreq_nb = {
  * It loops through the currently managed CPUs and tries to online/offline
  * them until the max_cpu_request criteria is met.
  */
-static void __ref try_hotplug(struct cpu_hp *data)
+static void try_hotplug(struct cpu_hp *data)
 {
 	unsigned int i;
 
@@ -484,7 +484,7 @@ static void __ref try_hotplug(struct cpu_hp *data)
 	mutex_unlock(&managed_cpus_lock);
 }
 
-static void __ref release_cluster_control(struct cpumask *off_cpus)
+static void release_cluster_control(struct cpumask *off_cpus)
 {
 	int cpu;
 
@@ -519,7 +519,7 @@ static void check_cluster_status(struct work_struct *work)
 	}
 }
 
-static int __ref msm_performance_cpu_callback(struct notifier_block *nfb,
+static int msm_performance_cpu_callback(struct notifier_block *nfb,
 		unsigned long action, void *hcpu)
 {
 	uint32_t cpu = (uintptr_t)hcpu;
@@ -572,7 +572,7 @@ static int __ref msm_performance_cpu_callback(struct notifier_block *nfb,
 	return NOTIFY_OK;
 }
 
-static struct notifier_block __refdata msm_performance_cpu_notifier = {
+static struct notifier_block msm_performance_cpu_notifier = {
 	.notifier_call = msm_performance_cpu_callback,
 };
 
