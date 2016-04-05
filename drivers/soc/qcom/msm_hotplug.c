@@ -496,7 +496,7 @@ void msm_hotplug_suspend(void)
 
 EXPORT_SYMBOL(msm_hotplug_suspend);
 
-static void __ref msm_hotplug_resume(void)
+void msm_hotplug_resume(void)
 {
 	int cpu, required_reschedule = 0, required_wakeup = 0;
 
