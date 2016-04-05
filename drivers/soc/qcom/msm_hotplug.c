@@ -462,7 +462,7 @@ reschedule:
 	reschedule_hotplug_work();
 }
 
-static void msm_hotplug_suspend(void)
+void msm_hotplug_suspend(void)
 {
 	int cpu;
 
@@ -488,7 +488,13 @@ static void msm_hotplug_suspend(void)
 			continue;
 		cpu_down(cpu);
 	}
+ 
+       pr_info("%s: suspended.\n", MSM_HOTPLUG);
+ 
+ 	return;
 }
+
+EXPORT_SYMBOL(msm_hotplug_suspend);
 
 static void __ref msm_hotplug_resume(void)
 {
@@ -521,7 +527,13 @@ static void __ref msm_hotplug_resume(void)
 	/* Resume hotplug workqueue if required */
 	if (required_reschedule)
 		reschedule_hotplug_work();
+
+        pr_info("%s: resumed.\n", MSM_HOTPLUG);
+ 
+ 	return;
 }
+
+EXPORT_SYMBOL(msm_hotplug_resume);
 
 static void hotplug_input_event(struct input_handle *handle, unsigned int type,
 				unsigned int code, int value)

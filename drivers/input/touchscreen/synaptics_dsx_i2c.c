@@ -93,6 +93,11 @@
 #define SYDBG(fmt, args...)	printk(KERN_ERR "%s: " fmt, __func__, ##args)
 #define SYDBG_REG(subpkt, fld) SYDBG(#subpkt "." #fld " = 0x%02X\n", subpkt.fld)
 
+#ifdef CONFIG_MSM_HOTPLUG
+extern void msm_hotplug_suspend(void);
+extern void msm_hotplug_resume(void);
+#endif
+
 #ifdef CONFIG_MMI_HALL_NOTIFICATIONS
 static int folio_notifier_callback(struct notifier_block *self,
 				 unsigned long event, void *data);
@@ -5905,6 +5910,10 @@ static int synaptics_rmi4_suspend(struct device *dev)
 			rmi4_data->board;
 	static char ud_stats[PAGE_SIZE];
 
+#ifdef CONFIG_MSM_HOTPLUG
+       msm_hotplug_suspend();
+#endif
+
 	if (atomic_cmpxchg(&rmi4_data->touch_stopped, 0, 1) == 1)
 		return 0;
 
@@ -5963,6 +5972,10 @@ static int synaptics_rmi4_resume(struct device *dev)
 					i2c_get_clientdata(to_i2c_client(dev));
 	const struct synaptics_dsx_platform_data *platform_data =
 					rmi4_data->board;
+
+#ifdef CONFIG_MSM_HOTPLUG
+	msm_hotplug_resume();
+#endif
 
 	if (atomic_cmpxchg(&rmi4_data->touch_stopped, 1, 0) == 0)
 		return 0;
