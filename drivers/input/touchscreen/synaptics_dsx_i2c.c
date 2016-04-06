@@ -46,6 +46,10 @@
 #include <linux/input/mt.h>
 #endif
 
+#ifdef CONFIG_MSM_HOTPLUG
+#include <linux/msm_hotplug.h>
+#endif
+
 #define DRIVER_NAME "synaptics_dsx_i2c"
 #define INPUT_PHYS_NAME "synaptics_dsx_i2c/input0"
 #define TYPE_B_PROTOCOL
@@ -5911,7 +5915,9 @@ static int synaptics_rmi4_suspend(struct device *dev)
 	static char ud_stats[PAGE_SIZE];
 
 #ifdef CONFIG_MSM_HOTPLUG
-       msm_hotplug_suspend();
+       msm_hotplug_scr_suspended = true;
+       if (msm_enabled)
+		msm_hotplug_suspend();
 #endif
 
 	if (atomic_cmpxchg(&rmi4_data->touch_stopped, 0, 1) == 1)
@@ -5974,7 +5980,9 @@ static int synaptics_rmi4_resume(struct device *dev)
 					rmi4_data->board;
 
 #ifdef CONFIG_MSM_HOTPLUG
-	msm_hotplug_resume();
+	msm_hotplug_scr_suspended = false;
+        if (msm_enabled)
+		msm_hotplug_resume();
 #endif
 
 	if (atomic_cmpxchg(&rmi4_data->touch_stopped, 1, 0) == 0)
