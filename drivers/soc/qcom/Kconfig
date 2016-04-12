@@ -607,6 +607,10 @@ endif # CPU_FREQ_MSM
 config STATE_NOTIFIER
         bool "State Notifier"
 
+config STATE_HELPER
+        bool "State Helper"
+	depends on STATE_NOTIFIER
+
 source "drivers/soc/qcom/memshare/Kconfig"
 
 config BOOTINFO
