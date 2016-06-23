@@ -1,4 +1,5 @@
-#
+#!/bin/bash
+
  # Copyright � 2016,  Sultan Qasim Khan <sultanqasim@gmail.com> 		      
  # Copyright � 2016,  Varun Chitre  <varun.chitre15@gmail.com>	
  #
@@ -28,23 +29,24 @@ export SUBARCH=arm
 export CROSS_COMPILE=/home/technoander/uber-4.8/bin/arm-eabi-
 export KBUILD_BUILD_USER="technoander"
 export KBUILD_BUILD_HOST="technoander-dev"
-echo -e "$cyan***********************************************"
+echo -e "$red***********************************************"
 echo "          Compiling kernel                          "   
-echo -e "**********************************************$nocol"
+echo -e "**********************************************$blue"
 rm -f arch/arm/boot/dts/*.dtb
 rm -f arch/arm/boot/dt.img
 rm -f flash_zip/boot.img
-make clean && make mrproper
 echo -e " Initializing defconfig"
 make lux_defconfig
 echo -e " Building kernel"
 make -j4 zImage
 make -j4 dtbs
 
-/home/technoander/CoffeeKernel/tools/dtbToolCM -2 -o /home/technoander/CoffeeKernel/arch/arm/boot/dt.img -s 2048 -p /home/technoander/CoffeeKernel/scripts/dtc/ /home/technoander/CoffeeKernel/arch/arm/boot/dts/
+/home/technoander/CoffeeKernel/tools/dtbtool/dtbtool -o /home/technoander/CoffeeKernel/arch/arm/boot/dt.img -s 2048 -p /home/technoander/CoffeeKernel/scripts/dtc/ /home/technoander/CoffeeKernel/arch/arm/boot/dts/
 
 make -j4 modules
-echo -e " Make flashable zip"
+echo -e "$yellow*************************"
+echo "          Make flashable zip              "
+echo -e "*******************************$yelllow"
 rm -rf technoander_install
 mkdir -p technoander_install
 make -j4 modules_install INSTALL_MOD_PATH=technoander_install INSTALL_MOD_STRIP=1
