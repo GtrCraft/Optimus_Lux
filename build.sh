@@ -26,9 +26,7 @@ red='\033[0;31m'
 nocol='\033[0m'
 export ARCH=arm
 export SUBARCH=arm
-export CROSS_COMPILE=/home/technoander/uber-4.8/bin/arm-eabi-
-export KBUILD_BUILD_USER="technoander"
-export KBUILD_BUILD_HOST="technoander-dev"
+export CROSS_COMPILE=/home/gtrcraft/data/optimus/prebuilts/arm-eabi-4.9/bin/arm-eabi-
 echo -e "$red***********************************************"
 echo "          Compiling kernel                          "   
 echo -e "**********************************************$blue"
@@ -38,27 +36,28 @@ rm -f flash_zip/boot.img
 echo -e " Initializing defconfig"
 make lux_defconfig
 echo -e " Building kernel"
+make -C tools/dtbtool
 make -j4 zImage
 make -j4 dtbs
 
-/home/technoander/CoffeeKernel/tools/dtbtool/dtbtool -o /home/technoander/CoffeeKernel/arch/arm/boot/dt.img -s 2048 -p /home/technoander/CoffeeKernel/scripts/dtc/ /home/technoander/CoffeeKernel/arch/arm/boot/dts/
+/home/gtrcraft/data/optimus/msm8916/tools/dtbtool/dtbtool -o /home/gtrcraft/data/optimus/msm8916/arch/arm/boot/dt.img -s 2048 -p /home/gtrcraft/data/optimus/msm8916/scripts/dtc/ /home/gtrcraft/data/optimus/msm8916/arch/arm/boot/dts/
 
 make -j4 modules
 echo -e "$yellow*************************"
 echo "          Make flashable zip              "
-echo -e "*******************************$yelllow"
-rm -rf technoander_install
-mkdir -p technoander_install
-make -j4 modules_install INSTALL_MOD_PATH=technoander_install INSTALL_MOD_STRIP=1
+echo -e "*******************************$yellow"
+rm -rf gtrcraft_install
+mkdir -p gtrcraft_install
+make -j4 modules_install INSTALL_MOD_PATH=gtrcraft_install INSTALL_MOD_STRIP=1
 mkdir -p flash_zip/system/lib/modules/pronto
-find technoander_install/ -name '*.ko' -type f -exec cp '{}' flash_zip/system/lib/modules/ \;
+find gtrcraft_install/ -name '*.ko' -type f -exec cp '{}' flash_zip/system/lib/modules/ \;
 mv flash_zip/system/lib/modules/wlan.ko flash_zip/system/lib/modules/pronto/pronto_wlan.ko
 cp arch/arm/boot/zImage flash_zip/tools/
 cp arch/arm/boot/dt.img flash_zip/tools/
-rm -f /home/technoander/lux_coffeekernel_rx.zip
+rm -f /home/gtrcraft/data/optimus/optimus_kernel_rXX.zip
 cd flash_zip
-zip -r ../arch/arm/boot/coffeekernel.zip ./
-mv /home/technoander/CoffeeKernel/arch/arm/boot/coffee_kernel.zip /home/technoander/lux_coffeekernel_rx.zip
+zip -r ../arch/arm/boot/optimus_kernel.zip ./
+mv /home/gtrcraft/data/optimus/msm8916/arch/arm/boot/optimus_kernel.zip /home/gtrcraft/data/optimus/optimus_kernel_rXX.zip
 BUILD_END=$(date +"%s")
 DIFF=$(($BUILD_END - $BUILD_START))
 echo -e "$yellow Build completed in $(($DIFF / 60)) minute(s) and $(($DIFF % 60)) seconds.$nocol"

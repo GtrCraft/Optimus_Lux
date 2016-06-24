@@ -1,19 +1,7 @@
-ui_print("Coffee Kernel for lux");
+ui_print("Optimus Kernel for lux");
 
-assert(getprop("ro.product.device") == "surnia" ||
-       getprop("ro.product.device") == "surnia_umts" ||
-       getprop("ro.product.device") == "surnia_uds" ||
-       getprop("ro.product.device") == "surnia_udstv" ||
-       getprop("ro.product.device") == "osprey" ||
-       getprop("ro.product.device") == "osprey_umts" ||
-       getprop("ro.product.device") == "osprey_u2" ||
-       getprop("ro.product.device") == "osprey_ud2" ||
-       getprop("ro.product.device") == "osprey_uds" ||
-       getprop("ro.product.device") == "osprey_cdma" ||
-       getprop("ro.product.device") == "osprey_udstv" ||
-       getprop("ro.product.device") == "merlin" ||
-       getprop("ro.product.device") == "lux" ||
-       abort("This package is for device: surnia,osprey,merlin,lux; this device is " +
+assert(getprop("ro.product.device") == "lux" ||
+       abort("This package is for device: lux; this device is " +
              getprop("ro.product.device") + "."););
 
 ui_print("Extracting flashing tools");
@@ -43,6 +31,5 @@ unmount("/system");
 set_progress(0.9);
 
 ui_print("Kernel installation completed");
-ui_print("Kernel Dev: TechnoAnder");
-ui_print("Updates: weekly");
+ui_print("Made by GtrCraft");
 set_progress(1.0);
