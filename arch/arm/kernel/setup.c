@@ -101,6 +101,9 @@ EXPORT_SYMBOL(system_serial_high);
 unsigned int elf_hwcap __read_mostly;
 EXPORT_SYMBOL(elf_hwcap);
 
+unsigned int elf_hwcap2 __read_mostly;
+EXPORT_SYMBOL(elf_hwcap2);
+
 unsigned int boot_reason;
 EXPORT_SYMBOL(boot_reason);
 
@@ -241,12 +244,9 @@ static int __get_cpu_architecture(void)
 		if (cpu_arch)
 			cpu_arch += CPU_ARCH_ARMv3;
 	} else if ((read_cpuid_id() & 0x000f0000) == 0x000f0000) {
-		unsigned int mmfr0;
-
 		/* Revised CPUID format. Read the Memory Model Feature
 		 * Register 0 and check for VMSAv7 or PMSAv7 */
-		asm("mrc	p15, 0, %0, c0, c1, 4"
-		    : "=r" (mmfr0));
+		unsigned int mmfr0 = read_cpuid_ext(CPUID_EXT_MMFR0);
 		if ((mmfr0 & 0x0000000f) >= 0x00000003 ||
 		    (mmfr0 & 0x000000f0) >= 0x00000030)
 			cpu_arch = CPU_ARCH_ARMv7;
@@ -367,34 +367,71 @@ void __init early_print(const char *str, ...)
 
 static void __init cpuid_init_hwcaps(void)
 {
-	unsigned int divide_instrs;
+	int block;
+	u32 isar5;
 
 	if (cpu_architecture() < CPU_ARCH_ARMv7)
 		return;
 
-	divide_instrs = (read_cpuid_ext(CPUID_EXT_ISAR0) & 0x0f000000) >> 24;
-
-	switch (divide_instrs) {
-	case 2:
+	block = cpuid_feature_extract(CPUID_EXT_ISAR0, 24);
+	if (block >= 2)
 		elf_hwcap |= HWCAP_IDIVA;
-	case 1:
+	if (block >= 1)
 		elf_hwcap |= HWCAP_IDIVT;
-	}
+
+	/* LPAE implies atomic ldrd/strd instructions */
+	block = cpuid_feature_extract(CPUID_EXT_MMFR0, 0);
+	if (block >= 5)
+		elf_hwcap |= HWCAP_LPAE;
+
+	/* check for supported v8 Crypto instructions */
+	isar5 = read_cpuid_ext(CPUID_EXT_ISAR5);
+
+	block = cpuid_feature_extract_field(isar5, 4);
+	if (block >= 2)
+		elf_hwcap2 |= HWCAP2_PMULL;
+	if (block >= 1)
+		elf_hwcap2 |= HWCAP2_AES;
+
+	block = cpuid_feature_extract_field(isar5, 8);
+	if (block >= 1)
+		elf_hwcap2 |= HWCAP2_SHA1;
+
+	block = cpuid_feature_extract_field(isar5, 12);
+	if (block >= 1)
+		elf_hwcap2 |= HWCAP2_SHA2;
+
+	block = cpuid_feature_extract_field(isar5, 16);
+	if (block >= 1)
+		elf_hwcap2 |= HWCAP2_CRC32;
 }
 
-static void __init feat_v6_fixup(void)
+static void __init elf_hwcap_fixup(void)
 {
-	int id = read_cpuid_id();
-
-	if ((id & 0xff0f0000) != 0x41070000)
-		return;
+	unsigned id = read_cpuid_id();
 
 	/*
 	 * HWCAP_TLS is available only on 1136 r1p0 and later,
 	 * see also kuser_get_tls_init.
 	 */
-	if ((((id >> 4) & 0xfff) == 0xb36) && (((id >> 20) & 3) == 0))
+	if ((((id >> 4) & 0xfff) == 0xb36) && (((id >> 20) & 3) == 0)) {
 		elf_hwcap &= ~HWCAP_TLS;
+		return;
+	}
+
+	/* Verify if CPUID scheme is implemented */
+	if ((id & 0x000f0000) != 0x000f0000)
+		return;
+
+	/*
+	 * If the CPU supports LDREX/STREX and LDREXB/STREXB,
+	 * avoid advertising SWP; it may not be atomic with
+	 * multiprocessing cores.
+	 */
+	if (cpuid_feature_extract(CPUID_EXT_ISAR3, 12) > 1 ||
+	    (cpuid_feature_extract(CPUID_EXT_ISAR3, 12) == 1 &&
+	     cpuid_feature_extract(CPUID_EXT_ISAR3, 20) >= 3))
+		elf_hwcap &= ~HWCAP_SWP;
 }
 
 /*
@@ -585,7 +622,7 @@ static void __init setup_processor(void)
 	elf_hwcap &= ~(HWCAP_THUMB | HWCAP_IDIVT);
 #endif
 
-	feat_v6_fixup();
+	elf_hwcap_fixup();
 
 	cacheid_init();
 	cpu_init();
@@ -611,10 +648,13 @@ int __init arm_add_memory(phys_addr_t start, phys_addr_t size)
 
 	/*
 	 * Ensure that start/size are aligned to a page boundary.
-	 * Size is appropriately rounded down, start is rounded up.
+	 * Size is rounded down, start is rounded up.
 	 */
-	size -= start & ~PAGE_MASK;
 	aligned_start = PAGE_ALIGN(start);
+	if (aligned_start > start + size)
+		size = 0;
+	else
+		size -= aligned_start - start;
 
 #ifndef CONFIG_ARCH_PHYS_ADDR_T_64BIT
 	if (aligned_start > ULONG_MAX) {
@@ -974,6 +1014,15 @@ static const char *hwcap_str[] = {
 	NULL
 };
 
+static const char *hwcap2_str[] = {
+	"aes",
+	"pmull",
+	"sha1",
+	"sha2",
+	"crc32",
+	NULL
+};
+
 static int c_show(struct seq_file *m, void *v)
 {
 	int i, j;
@@ -1005,6 +1054,10 @@ static int c_show(struct seq_file *m, void *v)
 		for (j = 0; hwcap_str[j]; j++)
 			if (elf_hwcap & (1 << j))
 				seq_printf(m, "%s ", hwcap_str[j]);
+
+		for (j = 0; hwcap2_str[j]; j++)
+			if (elf_hwcap2 & (1 << j))
+				seq_printf(m, "%s ", hwcap2_str[j]);
 
 		seq_printf(m, "\nCPU implementer\t: 0x%02x\n", cpuid >> 24);
 		seq_printf(m, "CPU architecture: %s\n",
