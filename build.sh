@@ -25,7 +25,6 @@ yellow='\033[0;33m'
 red='\033[0;31m'
 nocol='\033[0m'
 export ARCH=arm
-<<<<<<< HEAD
 export SUBARCH=arm
 export CROSS_COMPILE=/home/gtrcraft/data/optimus/prebuilts/arm-eabi-4.9/bin/arm-eabi-
 echo -e "$red***********************************************"
@@ -62,44 +61,3 @@ mv /home/gtrcraft/data/optimus/msm8916/arch/arm/boot/optimus_kernel.zip /home/gt
 BUILD_END=$(date +"%s")
 DIFF=$(($BUILD_END - $BUILD_START))
 echo -e "$yellow Build completed in $(($DIFF / 60)) minute(s) and $(($DIFF % 60)) seconds.$nocol"
-=======
-echo "**** Kernel defconfig is set to $KERNEL_DEFCONFIG ****"
-make $KERNEL_DEFCONFIG
-make -j$JOBS
-
-# Time for dtb
-echo "**** Generating DT.IMG ****"
-$DTBTOOL/dtbToolCM -2 -o $KERNEL_DIR/arch/arm/boot/dtb -s 2048 -p $KERNEL_DIR/scripts/dtc/ $KERNEL_DIR/arch/arm/boot/dts/
-
-echo "**** Verify zImage,dtb & wlan ****"
-ls $KERNEL_DIR/arch/arm/boot/zImage
-ls $KERNEL_DIR/arch/arm/boot/dtb
-ls $KERNEL_DIR/drivers/staging/prima/wlan.ko
-
-#Anykernel 2 time!!
-echo "**** Verifying Anyernel2 Directory ****"
-ls $ANY_KERNEL2_DIR
-echo "**** Removing leftovers ****"
-rm -f $ANY_KERNEL2_DIR/dtb
-rm -f $ANY_KERNEL2_DIR/zImage
-rm -f $ANY_KERNEL2_DIR/modules/wlan.ko
-rm -f $ANY_KERNEL2_DIR/$FINAL_KERNEL_ZIP
-
-echo "**** Copying zImage ****"
-cp $KERNEL_DIR/arch/arm/boot/zImage $ANY_KERNEL2_DIR/
-echo "**** Copying dtb ****"
-cp $KERNEL_DIR/arch/arm/boot/dtb $ANY_KERNEL2_DIR/
-echo "**** Copying modules ****"
-cp $KERNEL_DIR/drivers/staging/prima/wlan.ko $ANY_KERNEL2_DIR/modules/
-
-echo "**** Time to zip up! ****"
-cd $ANY_KERNEL2_DIR/
-zip -r9 $FINAL_KERNEL_ZIP * -x README $FINAL_KERNEL_ZIP
-
-echo "**** Here's your zip ****"
-ls $ANY_KERNEL2_DIR/$FINAL_KERNEL_ZIP
-
-echo "**** Good Bye!! ****"
-cd $KERNEL_DIR
-rm -f arch/arm/boot/dtb
->>>>>>> parent of 8731887... build: few adjustments
