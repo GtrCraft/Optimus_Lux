@@ -26,7 +26,7 @@ red='\033[0;31m'
 nocol='\033[0m'
 export ARCH=arm
 export SUBARCH=arm
-export CROSS_COMPILE=/home/gtrcraft/data/optimus/prebuilts/arm-eabi-4.9/bin/arm-eabi-
+export CROSS_COMPILE=/home/gtrcraft/data/optimus/prebuilts/arm-eabi-4.9-linaro/bin/arm-eabi-
 echo -e "$red***********************************************"
 echo "          Compiling kernel                          "   
 echo -e "**********************************************$blue"
@@ -40,7 +40,7 @@ make -C tools/dtbtool
 make -j4 zImage
 make -j4 dtbs
 
-/home/gtrcraft/data/optimus/msm8916/tools/dtbtool/dtbtool -o /home/gtrcraft/data/optimus/msm8916/arch/arm/boot/dt.img -s 2048 -p /home/gtrcraft/data/optimus/msm8916/scripts/dtc/ /home/gtrcraft/data/optimus/msm8916/arch/arm/boot/dts/
+/home/gtrcraft/data/optimus/kernel/tools/dtbtool/dtbtool -o /home/gtrcraft/data/optimus/kernel/arch/arm/boot/dt.img -s 2048 -p /home/gtrcraft/data/optimus/kernel/scripts/dtc/ /home/gtrcraft/data/optimus/kernel/arch/arm/boot/dts/
 
 make -j4 modules
 echo -e "$yellow*************************"
@@ -57,7 +57,7 @@ cp arch/arm/boot/dt.img flash_zip/tools/
 rm -f /home/gtrcraft/data/optimus/optimus_kernel_rXX.zip
 cd flash_zip
 zip -r ../arch/arm/boot/optimus_kernel.zip ./
-mv /home/gtrcraft/data/optimus/msm8916/arch/arm/boot/optimus_kernel.zip /home/gtrcraft/data/optimus/optimus_kernel_rXX.zip
+mv /home/gtrcraft/data/optimus/kernel/arch/arm/boot/optimus_kernel.zip /home/gtrcraft/data/optimus/optimus_kernel_rXX.zip
 BUILD_END=$(date +"%s")
 DIFF=$(($BUILD_END - $BUILD_START))
 echo -e "$yellow Build completed in $(($DIFF / 60)) minute(s) and $(($DIFF % 60)) seconds.$nocol"
