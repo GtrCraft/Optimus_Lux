@@ -23,10 +23,10 @@ MODULE_DESCRIPTION("Accelerated SHA-384/SHA-512 secure hash for ARM");
 MODULE_AUTHOR("Ard Biesheuvel <ard.biesheuvel@linaro.org>");
 MODULE_LICENSE("GPL v2");
 
-MODULE_ALIAS("sha384");
-MODULE_ALIAS("sha512");
-MODULE_ALIAS("sha384-arm");
-MODULE_ALIAS("sha512-arm");
+MODULE_ALIAS_CRYPTO("sha384");
+MODULE_ALIAS_CRYPTO("sha512");
+MODULE_ALIAS_CRYPTO("sha384-arm");
+MODULE_ALIAS_CRYPTO("sha512-arm");
 
 asmlinkage void sha512_block_data_order(u64 *state, u8 const *src, int blocks);
 

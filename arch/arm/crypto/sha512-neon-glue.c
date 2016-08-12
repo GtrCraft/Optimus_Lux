@@ -19,8 +19,8 @@
 
 #include "sha512.h"
 
-MODULE_ALIAS("sha384-neon");
-MODULE_ALIAS("sha512-neon");
+MODULE_ALIAS_CRYPTO("sha384-neon");
+MODULE_ALIAS_CRYPTO("sha512-neon");
 
 asmlinkage void sha512_block_data_order_neon(u64 *state, u8 const *src,
 					     int blocks);
