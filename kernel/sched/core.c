@@ -1301,9 +1301,7 @@ static inline u64 scale_exec_time(u64 delta, struct rq *rq)
 	unsigned int cur_freq = rq->cur_freq;
 	int sf;
 
-	if (unlikely(cur_freq > max_possible_freq ||
-		     (cur_freq == rq->max_freq &&
-		      rq->max_freq < rq->max_possible_freq)))
+	if (unlikely(cur_freq > max_possible_freq))
 		cur_freq = rq->max_possible_freq;
 
 	delta = div64_u64(delta  * cur_freq, max_possible_freq);
@@ -3165,6 +3163,9 @@ try_to_wake_up(struct task_struct *p, unsigned int state, int wake_flags)
 	struct rq *rq;
 	u64 wallclock;
 #endif
+	bool freq_notif_allowed = !(wake_flags & WF_NO_NOTIFIER);
+
+	wake_flags &= ~WF_NO_NOTIFIER;
 
 	/*
 	 * If we are going to wake up a thread waiting for CONDITION we
@@ -3249,11 +3250,14 @@ out:
 		atomic_notifier_call_chain(&migration_notifier_head,
 					   0, (void *)&mnd);
 
-	if (!same_freq_domain(src_cpu, cpu)) {
-		check_for_freq_change(cpu_rq(cpu));
-		check_for_freq_change(cpu_rq(src_cpu));
-	} else if (heavy_task)
-		check_for_freq_change(cpu_rq(cpu));
+	if (freq_notif_allowed) {
+		if (!same_freq_domain(src_cpu, cpu)) {
+			check_for_freq_change(cpu_rq(cpu));
+			check_for_freq_change(cpu_rq(src_cpu));
+		} else if (heavy_task) {
+			check_for_freq_change(cpu_rq(cpu));
+		}
+	}
 
 	return success;
 }
@@ -3316,10 +3320,29 @@ out:
  */
 int wake_up_process(struct task_struct *p)
 {
-	WARN_ON(task_is_stopped_or_traced(p));
 	return try_to_wake_up(p, TASK_NORMAL, 0);
 }
 EXPORT_SYMBOL(wake_up_process);
+
+/**
+ * wake_up_process_no_notif - Wake up a specific process without notifying
+ * governor
+ * @p: The process to be woken up.
+ *
+ * Attempt to wake up the nominated process and move it to the set of runnable
+ * processes.
+ *
+ * Return: 1 if the process was woken up, 0 if it was already running.
+ *
+ * It may be assumed that this function implies a write memory barrier before
+ * changing the task state if and only if any tasks are woken up.
+ */
+int wake_up_process_no_notif(struct task_struct *p)
+{
+	WARN_ON(task_is_stopped_or_traced(p));
+	return try_to_wake_up(p, TASK_NORMAL, WF_NO_NOTIFIER);
+}
+EXPORT_SYMBOL(wake_up_process_no_notif);
 
 int wake_up_state(struct task_struct *p, unsigned int state)
 {
@@ -6911,9 +6934,9 @@ static int __migrate_task(struct task_struct *p, int src_cpu, int dest_cpu)
 	 * placed properly.
 	 */
 	if (p->on_rq) {
-		dequeue_task(rq_src, p, 0);
+		dequeue_task(rq_src, p, DEQUEUE_MIGRATING);
 		set_task_cpu(p, dest_cpu);
-		enqueue_task(rq_dest, p, 0);
+		enqueue_task(rq_dest, p, ENQUEUE_MIGRATING);
 		check_preempt_curr(rq_dest, p, 0);
 		moved = true;
 	}

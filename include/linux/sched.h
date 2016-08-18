@@ -1766,6 +1766,8 @@ static inline unsigned long sched_get_busy(int cpu)
 {
 	return 0;
 }
+static inline void sched_get_cpus_busy(unsigned long *busy,
+				const struct cpumask *query_cpus) {};
 static inline void sched_set_io_is_busy(int val) {};
 #endif
 
@@ -2183,6 +2185,7 @@ extern void xtime_update(unsigned long ticks);
 
 extern int wake_up_state(struct task_struct *tsk, unsigned int state);
 extern int wake_up_process(struct task_struct *tsk);
+extern int wake_up_process_no_notif(struct task_struct *tsk);
 extern void wake_up_new_task(struct task_struct *tsk);
 #ifdef CONFIG_SMP
  extern void kick_process(struct task_struct *tsk);
