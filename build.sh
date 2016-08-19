@@ -26,7 +26,7 @@ red='\033[0;31m'
 nocol='\033[0m'
 export ARCH=arm
 export SUBARCH=arm
-export CROSS_COMPILE=/home/gtrcraft/data/optimus/prebuilts/arm-eabi-4.9-linaro/bin/arm-eabi-
+export CROSS_COMPILE=/home/gtrcraft/data/optimus/prebuilts/arm-linux-androideabi-4.9-linaro/bin/arm-linux-androideabi-
 echo -e "$red***********************************************"
 echo "          Compiling kernel                          "   
 echo -e "**********************************************$blue"
