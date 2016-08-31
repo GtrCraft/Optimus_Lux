@@ -54,10 +54,10 @@ find gtrcraft_install/ -name '*.ko' -type f -exec cp '{}' flash_zip/system/lib/m
 mv flash_zip/system/lib/modules/wlan.ko flash_zip/system/lib/modules/pronto/pronto_wlan.ko
 cp arch/arm/boot/zImage flash_zip/tools/
 cp arch/arm/boot/dt.img flash_zip/tools/
-rm -f /home/gtrcraft/data/optimus/optimus_kernel_r14.zip
+rm -f /home/gtrcraft/data/optimus/optimus_kernel_r15.zip
 cd flash_zip
 zip -r ../arch/arm/boot/optimus_kernel.zip ./
-mv /home/gtrcraft/data/optimus/kernel/arch/arm/boot/optimus_kernel.zip /home/gtrcraft/data/optimus/optimus_kernel_r14.zip
+mv /home/gtrcraft/data/optimus/kernel/arch/arm/boot/optimus_kernel.zip /home/gtrcraft/data/optimus/optimus_kernel_r15.zip
 BUILD_END=$(date +"%s")
 DIFF=$(($BUILD_END - $BUILD_START))
 echo -e "$yellow Build completed in $(($DIFF / 60)) minute(s) and $(($DIFF % 60)) seconds.$nocol"
