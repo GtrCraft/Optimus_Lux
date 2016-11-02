@@ -4,15 +4,15 @@
 ### Shivam Desai (shivamdesaixda@gmail.com)
 ### A custom build script to build zImage,DTB & wlan module (Anykernel2 method)
 
-set -e
+#set -e
 
 ## Copy this script inside the kernel directory
-KERNEL_DIR=$PWD
-KERNEL_TOOLCHAIN=/home/gtrcraft/data/optimus/prebuilts/arm-linux-androideabi-4.9-linaro/bin/arm-eabi-
+KERNEL_DIR=/home/gtrcraft/data/optimus/kernel
+KERNEL_TOOLCHAIN=/home/gtrcraft/data/optimus/prebuilts/arm-eabi-4.8/bin/arm-eabi-
 KERNEL_DEFCONFIG=lux_defconfig
 DTBTOOL=$KERNEL_DIR/Dtbtool/
-JOBS=8
-ANY_KERNEL2_DIR=$KERNEL_DIR/Anykernel2/
+JOBS=4
+ANY_KERNEL2_DIR=$KERNEL_DIR/Anykernel2
 FINAL_KERNEL_ZIP=Optimus-R16-Lux.zip
 
 # Clean build always lol
@@ -55,8 +55,8 @@ cp $KERNEL_DIR/drivers/staging/prima/wlan.ko $ANY_KERNEL2_DIR/modules/
 echo "**** Time to zip up! ****"
 cd $ANY_KERNEL2_DIR/
 zip -r9 $FINAL_KERNEL_ZIP * -x README $FINAL_KERNEL_ZIP
-rm -rf /home/shivam/$FINAL_KERNEL_ZIP
-cp /home/shivam/optimus/Anykernel2/$FINAL_KERNEL_ZIP /home/gtrcraft/data/optimus/$FINAL_KERNEL_ZIP
+rm -rf /home/gtrcraft/data/optimus/$FINAL_KERNEL_ZIP
+cp /home/gtrcraft/data/optimus/kernel/Anykernel2/$FINAL_KERNEL_ZIP /home/gtrcraft/data/optimus/$FINAL_KERNEL_ZIP
 
 echo "**** Good Bye!! ****"
 cd $KERNEL_DIR

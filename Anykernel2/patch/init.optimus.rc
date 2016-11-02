@@ -1,0 +1,6 @@
+# optimus Kernel Tweak Script
+service optimus /system/bin/sh /init.optimus.sh
+	class main
+	user root
+	group root
+	oneshot
