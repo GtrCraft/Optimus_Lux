@@ -3,18 +3,12 @@
 
 ## AnyKernel setup
 # EDIFY properties
-kernel.string=Flashhhh@ xda-developers
+kernel.string=GtrCraft@ xda-developers
 do.devicecheck=1
 do.initd=0
 do.modules=1
 do.cleanup=1
-device.name1=osprey
-device.name2=osprey_umts
-device.name3=osprey_u2
-device.name4=osprey_ud2
-device.name5=osprey_uds
-device.name6=osprey_cdma
-device.name7=osprey_udstv
+device.name1=lux
 
 # shell variables
 block=/dev/block/bootdevice/by-name/boot;
@@ -27,7 +21,6 @@ block=/dev/block/bootdevice/by-name/boot;
 ramdisk=/tmp/anykernel/ramdisk;
 bin=/tmp/anykernel/tools;
 split_img=/tmp/anykernel/split_img;
-patch=/tmp/anykernel/patch;
 
 chmod -R 755 $bin;
 mkdir -p $ramdisk $split_img;
@@ -131,43 +124,6 @@ remove_line() {
     sed -i "${line}d" $1;
   fi;
 }
-
-# prepend_file <file> <if search string> <patch file>
-prepend_file() {
-  if [ -z "$(grep "$2" $1)" ]; then
-    echo "$(cat $patch/$3 $1)" > $1;
-  fi;
-}
-
-# insert_file <file> <if search string> <before|after> <line match string> <patch file>
-insert_file() {
-  if [ -z "$(grep "$2" $1)" ]; then
-    case $3 in
-      before) offset=0;;
-      after) offset=1;;
-    esac;
-    line=$((`grep -n "$4" $1 | cut -d: -f1` + offset));
-    sed -i "${line}s;^;\n;" $1;
-    sed -i "$((line - 1))r $patch/$5" $1;
-  fi;
-}
-
-# append_file <file> <if search string> <patch file>
-append_file() {
-  if [ -z "$(grep "$2" $1)" ]; then
-    echo -ne "\n" >> $1;
-    cat $patch/$3 >> $1;
-    echo -ne "\n" >> $1;
-  fi;
-}
-
-# replace_file <file> <permissions> <patch file>
-replace_file() {
-  cp -pf $patch/$3 $1;
-  chmod $2 $1;
-}
-
-## end methods
 
 ## AnyKernel permissions
 # set permissions for included files
