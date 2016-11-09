@@ -597,3 +597,6 @@ config SND_SOC_FSA8500
 	depends on I2C && SND_HARPIA_HEADSET_SWH=n
 	help
 	FSA8500 headset detection IC chip
+
+config SOUND_CONTROL
+	bool "Sound control for wcd9335"
