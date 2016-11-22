@@ -1,4 +1,4 @@
- /* Copyright (c) 2014-2015, The Linux Foundation. All rights reserved.
+ /* Copyright (c) 2014-2016, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -39,6 +39,13 @@
 #define BTSCO_RATE_16KHZ 16000
 #define MAX_SND_CARDS 3
 
+#define SAMPLING_RATE_8KHZ      8000
+#define SAMPLING_RATE_16KHZ     16000
+#define SAMPLING_RATE_32KHZ     32000
+#define SAMPLING_RATE_48KHZ     48000
+#define SAMPLING_RATE_96KHZ     96000
+#define SAMPLING_RATE_192KHZ    192000
+
 #define PRI_MI2S_ID	(1 << 0)
 #define SEC_MI2S_ID	(1 << 1)
 #define TER_MI2S_ID	(1 << 2)
@@ -58,6 +65,7 @@ static int msm_btsco_ch = 1;
 
 static int msm_ter_mi2s_tx_ch = 1;
 static int msm_pri_mi2s_rx_ch = 1;
+static int pri_rx_sample_rate = SAMPLING_RATE_48KHZ;
 
 static int msm_proxy_rx_ch = 2;
 
@@ -219,6 +227,7 @@ static struct cdc_pdm_pinctrl_info pinctrl_info;
 struct ext_cdc_tlmm_pinctrl_info ext_cdc_pinctrl_info;
 
 static int mi2s_rx_bit_format = SNDRV_PCM_FORMAT_S16_LE;
+static int bits_per_sample = 16;
 
 static inline int param_is_mask(int p)
 {
@@ -252,13 +261,18 @@ static const struct snd_soc_dapm_widget msm8x16_dapm_widgets[] = {
 	SND_SOC_DAPM_MIC("Handset Mic", NULL),
 	SND_SOC_DAPM_MIC("Headset Mic", NULL),
 	SND_SOC_DAPM_MIC("Secondary Mic", NULL),
+	SND_SOC_DAPM_MIC("Digital Mic0", NULL),
 	SND_SOC_DAPM_MIC("Digital Mic1", NULL),
 	SND_SOC_DAPM_MIC("Digital Mic2", NULL),
+	SND_SOC_DAPM_MIC("Digital Mic3", NULL),
 };
 
 static char const *rx_bit_format_text[] = {"S16_LE", "S24_LE"};
 static const char *const ter_mi2s_tx_ch_text[] = {"One", "Two"};
 static const char *const loopback_mclk_text[] = {"DISABLE", "ENABLE"};
+static char const *pri_rx_sample_rate_text[] = {"KHZ_48", "KHZ_96",
+					"KHZ_192", "KHZ_8",
+					"KHZ_16", "KHZ_32"};
 
 static int msm_pri_rx_be_hw_params_fixup(struct snd_soc_pcm_runtime *rtd,
 				struct snd_pcm_hw_params *params)
@@ -269,9 +283,9 @@ static int msm_pri_rx_be_hw_params_fixup(struct snd_soc_pcm_runtime *rtd,
 	struct snd_interval *channels = hw_param_interval(params,
 					SNDRV_PCM_HW_PARAM_CHANNELS);
 
-	pr_debug("%s: Number of channels = %d\n", __func__,
-			msm_pri_mi2s_rx_ch);
-	rate->min = rate->max = 48000;
+	pr_debug("%s: Number of channels = %d Sample rate = %d \n", __func__,
+			msm_pri_mi2s_rx_ch, pri_rx_sample_rate);
+	rate->min = rate->max =  pri_rx_sample_rate;
 	channels->min = channels->max = msm_pri_mi2s_rx_ch;
 
 	return 0;
@@ -321,10 +335,12 @@ static int mi2s_rx_bit_format_put(struct snd_kcontrol *kcontrol,
 	switch (ucontrol->value.integer.value[0]) {
 	case 1:
 		mi2s_rx_bit_format = SNDRV_PCM_FORMAT_S24_LE;
+		bits_per_sample = 32;
 		break;
 	case 0:
 	default:
 		mi2s_rx_bit_format = SNDRV_PCM_FORMAT_S16_LE;
+		bits_per_sample = 16;
 		break;
 	}
 	return 0;
@@ -487,6 +503,68 @@ static int msm_pri_mi2s_rx_ch_put(struct snd_kcontrol *kcontrol,
 	return 1;
 }
 
+static int pri_rx_sample_rate_get(struct snd_kcontrol *kcontrol,
+				struct snd_ctl_elem_value *ucontrol)
+{
+	int sample_rate_val = 0;
+
+	switch (pri_rx_sample_rate) {
+	case SAMPLING_RATE_32KHZ:
+		sample_rate_val = 5;
+		break;
+	case SAMPLING_RATE_16KHZ:
+		sample_rate_val = 4;
+		break;
+	case SAMPLING_RATE_8KHZ:
+		sample_rate_val = 3;
+		break;
+	case SAMPLING_RATE_192KHZ:
+		sample_rate_val = 2;
+		break;
+	case SAMPLING_RATE_96KHZ:
+		sample_rate_val = 1;
+		break;
+	case SAMPLING_RATE_48KHZ:
+	default:
+		sample_rate_val = 0;
+		break;
+	}
+
+	ucontrol->value.integer.value[0] = sample_rate_val;
+	pr_debug("%s: sample_rate_val = %d\n", __func__,
+		 sample_rate_val);
+
+	return 0;
+}
+
+static int pri_rx_sample_rate_put(struct snd_kcontrol *kcontrol,
+				    struct snd_ctl_elem_value *ucontrol)
+{
+	switch (ucontrol->value.integer.value[0]) {
+	case 5:
+		pri_rx_sample_rate = SAMPLING_RATE_32KHZ;
+		break;
+	case 4:
+		pri_rx_sample_rate = SAMPLING_RATE_16KHZ;
+		break;
+	case 3:
+		pri_rx_sample_rate = SAMPLING_RATE_8KHZ;
+		break;
+	case 2:
+		pri_rx_sample_rate = SAMPLING_RATE_192KHZ;
+		break;
+	case 1:
+		pri_rx_sample_rate = SAMPLING_RATE_96KHZ;
+		break;
+	case 0:
+	default:
+		pri_rx_sample_rate = SAMPLING_RATE_48KHZ;
+	}
+	pr_debug("%s: pri_rx_sample_rate = %d\n", __func__,
+		 pri_rx_sample_rate);
+	return 0;
+}
+
 static int msm_ter_mi2s_tx_ch_get(struct snd_kcontrol *kcontrol,
 	struct snd_ctl_elem_value *ucontrol)
 {
@@ -634,7 +712,8 @@ static int ext_mi2s_clk_ctl(struct snd_pcm_substream *substream, bool enable)
 
 	if (enable) {
 		if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
-			mi2s_rx_clk.clk_val1 = Q6AFE_LPASS_IBIT_CLK_1_P536_MHZ;
+			u32 clk_val = pri_rx_sample_rate * bits_per_sample * 2;
+			mi2s_rx_clk.clk_val1 = clk_val;
 			ret = afe_set_lpass_clock(
 				AFE_PORT_ID_QUATERNARY_MI2S_RX,
 				&mi2s_rx_clk);
@@ -795,6 +874,7 @@ static const struct soc_enum msm_snd_enum[] = {
 	SOC_ENUM_SINGLE_EXT(2, rx_bit_format_text),
 	SOC_ENUM_SINGLE_EXT(2, ter_mi2s_tx_ch_text),
 	SOC_ENUM_SINGLE_EXT(2, loopback_mclk_text),
+	SOC_ENUM_SINGLE_EXT(6, pri_rx_sample_rate_text),
 };
 
 static const char *const btsco_rate_text[] = {"8000", "16000"};
@@ -813,7 +893,8 @@ static const struct snd_kcontrol_new msm_snd_controls[] = {
 			loopback_mclk_get, loopback_mclk_put),
 	SOC_ENUM_EXT("Internal BTSCO SampleRate", msm_btsco_enum[0],
 		     msm_btsco_rate_get, msm_btsco_rate_put),
-
+	SOC_ENUM_EXT("RX SampleRate", msm_snd_enum[3],
+			pri_rx_sample_rate_get, pri_rx_sample_rate_put),
 };
 
 static int msm8x16_mclk_event(struct snd_soc_dapm_widget *w,
@@ -1262,6 +1343,19 @@ static int msm_audrx_init_wcd(struct snd_soc_pcm_runtime *rtd)
 	snd_soc_dapm_new_controls(dapm, msm8x16_dapm_widgets,
 				ARRAY_SIZE(msm8x16_dapm_widgets));
 
+	snd_soc_dapm_ignore_suspend(dapm, "Headset Mic");
+	snd_soc_dapm_ignore_suspend(dapm, "Digital Mic0");
+	snd_soc_dapm_ignore_suspend(dapm, "Digital Mic1");
+	snd_soc_dapm_ignore_suspend(dapm, "Digital Mic2");
+	snd_soc_dapm_ignore_suspend(dapm, "Digital Mic3");
+
+	snd_soc_dapm_ignore_suspend(dapm, "AMIC2");
+	snd_soc_dapm_ignore_suspend(dapm, "DMIC0");
+	snd_soc_dapm_ignore_suspend(dapm, "DMIC1");
+	snd_soc_dapm_ignore_suspend(dapm, "DMIC2");
+	snd_soc_dapm_ignore_suspend(dapm, "DMIC3");
+	snd_soc_dapm_ignore_suspend(dapm, "SPK1 OUT");
+	snd_soc_dapm_ignore_suspend(dapm, "SPK2 OUT");
 	snd_soc_dapm_sync(dapm);
 
 	/* start mbhc */
