@@ -359,7 +359,7 @@ CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 CFLAGS_MODULE   =
 AFLAGS_MODULE   =
 LDFLAGS_MODULE  = --strip-debug
-CFLAGS_KERNEL	= -mcpu=cortex-a53 -mtune=cortex-a53 -mfloat-abi=hard -mfpu=neon-vfpv4 -munaligned-access
+CFLAGS_KERNEL	= -mcpu=cortex-a53 -mtune=cortex-a53 -mfpu=neon-vfpv4 -munaligned-access
 AFLAGS_KERNEL	=
 CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
 
