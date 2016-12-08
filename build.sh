@@ -8,7 +8,7 @@
 
 ## Copy this script inside the kernel directory
 KERNEL_DIR=/home/gtrcraft/data/optimus/kernel
-KERNEL_TOOLCHAIN=/home/gtrcraft/data/optimus/prebuilts/arm-eabi-4.8/bin/arm-eabi-
+KERNEL_TOOLCHAIN=/home/gtrcraft/data/optimus/prebuilts/arm-eabi-4.9/bin/arm-eabi-
 KERNEL_DEFCONFIG=lux_defconfig
 DTBTOOL=$KERNEL_DIR/Dtbtool/
 JOBS=4
