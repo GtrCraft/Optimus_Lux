@@ -19,8 +19,12 @@
 #include <linux/export.h>
 #include <linux/kernel_stat.h>
 #include <linux/slab.h>
+#include <linux/input.h>
 
 #include "cpufreq_governor.h"
+
+unsigned long touch_jiffies;
+EXPORT_SYMBOL_GPL(touch_jiffies);
 
 static struct attribute_group *get_sysfs_attr(struct dbs_data *dbs_data)
 {
@@ -37,7 +41,7 @@ void dbs_check_cpu(struct dbs_data *dbs_data, int cpu)
 	struct cs_dbs_tuners *cs_tuners = dbs_data->tuners;
 	struct cpufreq_policy *policy;
 	unsigned int sampling_rate;
-	unsigned int max_load = 0;
+	unsigned int max_load = 0, deferred_periods = UINT_MAX;
 	unsigned int ignore_nice;
 	unsigned int j;
 
@@ -119,42 +123,34 @@ void dbs_check_cpu(struct dbs_data *dbs_data, int cpu)
 		 * actually is. This is undesirable for latency-sensitive bursty
 		 * workloads.
 		 *
-		 * To avoid this, we reuse the 'load' from the previous
-		 * time-window and give this task a chance to start with a
-		 * reasonably high CPU frequency. (However, we shouldn't over-do
-		 * this copy, lest we get stuck at a high load (high frequency)
-		 * for too long, even when the current system load has actually
-		 * dropped down. So we perform the copy only once, upon the
-		 * first wake-up from idle.)
+		 * To avoid this, we calculate 'load' only on the last
+		 * sampling period.
 		 *
 		 * Detecting this situation is easy: the governor's deferrable
 		 * timer would not have fired during CPU-idle periods. Hence
 		 * an unusually large 'wall_time' (as compared to the sampling
 		 * rate) indicates this scenario.
 		 *
-		 * prev_load can be zero in two cases and we must recalculate it
-		 * for both cases:
-		 * - during long idle intervals
-		 * - explicitly set to zero
 		 */
-		if (unlikely(wall_time > (2 * sampling_rate) &&
-			     j_cdbs->prev_load)) {
-			load = j_cdbs->prev_load;
+		if (unlikely(wall_time > (2 * sampling_rate))) {
+			unsigned int busy = wall_time - idle_time;
+			unsigned int periods = wall_time / sampling_rate;
 
-			/*
-			 * Perform a destructive copy, to ensure that we copy
-			 * the previous load only once, upon the first wake-up
-			 * from idle.
-			 */
-			j_cdbs->prev_load = 0;
+			if (periods < deferred_periods)
+				deferred_periods = periods;
+
+			if (busy > sampling_rate)
+				load = 100;
+			else
+				load = 100 * busy / sampling_rate;
 		} else {
 			load = 100 * (wall_time - idle_time) / wall_time;
-			j_cdbs->prev_load = load;
 		}
 
 		if (load > max_load)
 			max_load = load;
 	}
+	cdbs->deferred_periods = deferred_periods;
 
 	dbs_data->cdata->gov_check_cpu(cpu, max_load);
 }
@@ -238,6 +234,83 @@ static void set_sampling_rate(struct dbs_data *dbs_data,
 		od_tuners->sampling_rate = sampling_rate;
 	}
 }
+
+static void gov_input_event(struct input_handle *handle, unsigned int type,
+		unsigned int code, int value)
+{
+	touch_jiffies = jiffies;
+}
+
+static int gov_input_connect(struct input_handler *handler,
+		struct input_dev *dev, const struct input_device_id *id)
+{
+	struct input_handle *handle;
+	int error;
+
+	handle = kzalloc(sizeof(struct input_handle), GFP_KERNEL);
+	if (!handle)
+		return -ENOMEM;
+
+	handle->dev = dev;
+	handle->handler = handler;
+	handle->name = "cpufreq";
+
+	error = input_register_handle(handle);
+	if (error)
+		goto err2;
+
+	error = input_open_device(handle);
+	if (error)
+		goto err1;
+
+	return 0;
+err1:
+	input_unregister_handle(handle);
+err2:
+	kfree(handle);
+	return error;
+}
+
+static void gov_input_disconnect(struct input_handle *handle)
+{
+	input_close_device(handle);
+	input_unregister_handle(handle);
+	kfree(handle);
+}
+
+static const struct input_device_id gov_ids[] = {
+	/* multi-touch touchscreen */
+	{
+		.flags = INPUT_DEVICE_ID_MATCH_EVBIT |
+			INPUT_DEVICE_ID_MATCH_ABSBIT,
+		.evbit = { BIT_MASK(EV_ABS) },
+		.absbit = { [BIT_WORD(ABS_MT_POSITION_X)] =
+			BIT_MASK(ABS_MT_POSITION_X) |
+			BIT_MASK(ABS_MT_POSITION_Y) },
+	},
+	/* touchpad */
+	{
+		.flags = INPUT_DEVICE_ID_MATCH_KEYBIT |
+			INPUT_DEVICE_ID_MATCH_ABSBIT,
+		.keybit = { [BIT_WORD(BTN_TOUCH)] = BIT_MASK(BTN_TOUCH) },
+		.absbit = { [BIT_WORD(ABS_X)] =
+			BIT_MASK(ABS_X) | BIT_MASK(ABS_Y) },
+	},
+	/* Keypad */
+	{
+		.flags = INPUT_DEVICE_ID_MATCH_EVBIT,
+		.evbit = { BIT_MASK(EV_KEY) },
+	},
+	{ },
+};
+
+static struct input_handler gov_input_handler = {
+	.event		= gov_input_event,
+	.connect	= gov_input_connect,
+	.disconnect	= gov_input_disconnect,
+	.name		= "cpufreq_gov",
+	.id_table	= gov_ids,
+};
 
 int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 		struct common_dbs_data *cdata, unsigned int event)
@@ -366,17 +439,11 @@ int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 		for_each_cpu(j, policy->cpus) {
 			struct cpu_dbs_common_info *j_cdbs =
 				dbs_data->cdata->get_cpu_cdbs(j);
-			unsigned int prev_load;
 
 			j_cdbs->cpu = j;
 			j_cdbs->cur_policy = policy;
 			j_cdbs->prev_cpu_idle = get_cpu_idle_time(j,
 					       &j_cdbs->prev_cpu_wall, io_busy);
-
-			prev_load = (unsigned int)
-				(j_cdbs->prev_cpu_wall - j_cdbs->prev_cpu_idle);
-			j_cdbs->prev_load = 100 * prev_load /
-					(unsigned int) j_cdbs->prev_cpu_wall;
 
 			if (ignore_nice)
 				j_cdbs->prev_cpu_nice =
@@ -404,6 +471,9 @@ int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 
 		gov_queue_work(dbs_data, policy,
 				delay_for_sampling_rate(sampling_rate), true);
+
+		if (!cpu)
+			rc = input_register_handler(&gov_input_handler);
 		break;
 
 	case CPUFREQ_GOV_STOP:
@@ -418,6 +488,8 @@ int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 
 		mutex_unlock(&dbs_data->mutex);
 
+		if (!cpu)
+			input_unregister_handler(&gov_input_handler);
 		break;
 
 	case CPUFREQ_GOV_LIMITS:

@@ -583,6 +583,16 @@ config MSM_PERFORMANCE_HOTPLUG_ON
           compile out the nodes needed for core-control functionality through
           msm_performance.
 
+config STATE_NOTIFIER
+         bool "State Notifier"
+
+config AUTOSMP
+	bool "Multi-core automatic hotplug support"
+	depends on SMP && HOTPLUG_CPU
+	help
+	  Automatically hotplugs the multiple cpu cores on and off
+	  based on cpu load and suspend state
+
 source "drivers/soc/qcom/memshare/Kconfig"
 
 config BOOTINFO
@@ -595,7 +605,6 @@ config FORCE_FAST_CHARGE
 	help
 	  This allows users to override default charge rate for both USB and AC
 	  charger input current
-
 
 config MMI_SOC_INFO
 	default n
