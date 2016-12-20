@@ -7,11 +7,11 @@
 #set -e
 
 ## Copy this script inside the kernel directory
-KERNEL_DIR=/home/gtrcraft/data/optimus/kernel
-KERNEL_TOOLCHAIN=/home/gtrcraft/data/optimus/prebuilts/arm-eabi-4.8/bin/arm-eabi-
+KERNEL_DIR=/home/nickv/data/optimus/kernel
+KERNEL_TOOLCHAIN=/home/nickv/data/optimus/prebuilts/arm-eabi-4.9/bin/arm-eabi-
 KERNEL_DEFCONFIG=lux_defconfig
 DTBTOOL=$KERNEL_DIR/Dtbtool/
-JOBS=4
+JOBS=16
 ANY_KERNEL2_DIR=$KERNEL_DIR/Anykernel2
 FINAL_KERNEL_ZIP=Optimus-R18-Lux.zip
 
@@ -56,7 +56,7 @@ echo "**** Time to zip up! ****"
 cd $ANY_KERNEL2_DIR/
 zip -r9 $FINAL_KERNEL_ZIP * -x README $FINAL_KERNEL_ZIP
 rm -rf /home/gtrcraft/data/optimus/$FINAL_KERNEL_ZIP
-cp /home/gtrcraft/data/optimus/kernel/Anykernel2/$FINAL_KERNEL_ZIP /home/gtrcraft/data/optimus/$FINAL_KERNEL_ZIP
+cp /home/nickv/data/optimus/kernel/Anykernel2/$FINAL_KERNEL_ZIP /home/nickv/data/optimus/$FINAL_KERNEL_ZIP
 
 echo "**** Good Bye!! ****"
 cd $KERNEL_DIR
