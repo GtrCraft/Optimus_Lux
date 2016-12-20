@@ -8,12 +8,12 @@
 
 ## Copy this script inside the kernel directory
 KERNEL_DIR=/home/nickv/data/optimus/kernel
-KERNEL_TOOLCHAIN=/home/nickv/data/optimus/prebuilts/arm-eabi-4.9/bin/arm-eabi-
+KERNEL_TOOLCHAIN=/home/nickv/data/optimus/prebuilts/arm-linux-androideabi-4.9/bin/arm-linux-androideabi-
 KERNEL_DEFCONFIG=lux_defconfig
 DTBTOOL=$KERNEL_DIR/Dtbtool/
 JOBS=16
 ANY_KERNEL2_DIR=$KERNEL_DIR/Anykernel2
-FINAL_KERNEL_ZIP=Optimus-R18-Lux.zip
+FINAL_KERNEL_ZIP=Optimus-R18.1-Lux.zip
 
 # Clean build always lol
 echo "**** Cleaning ****"
