@@ -3,18 +3,12 @@
 
 ## AnyKernel setup
 # EDIFY properties
-kernel.string=Flashhhh@ xda-developers
+kernel.string=GtrCraft@ xda-developers
 do.devicecheck=1
 do.initd=0
 do.modules=1
 do.cleanup=1
-device.name1=osprey
-device.name2=osprey_umts
-device.name3=osprey_u2
-device.name4=osprey_ud2
-device.name5=osprey_uds
-device.name6=osprey_cdma
-device.name7=osprey_udstv
+device.name1=lux
 
 # shell variables
 block=/dev/block/bootdevice/by-name/boot;

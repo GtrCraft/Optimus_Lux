@@ -38,7 +38,7 @@ bb=/tmp/anykernel/tools/busybox;
 
 ui_print "$(file_getprop /tmp/anykernel/anykernel.sh kernel.string)";
 ui_print "**********************************";
-ui_print "Optimus Kernel by Flashhhh";
+ui_print "Optimus Kernel by GtrCraft";
 ui_print "Optimizing.... ";
 ui_print "**********************************";
 mount -o ro -t auto /system;
