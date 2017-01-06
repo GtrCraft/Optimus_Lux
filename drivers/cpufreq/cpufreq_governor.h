@@ -187,6 +187,7 @@ struct cs_dbs_tuners {
 	unsigned int up_threshold;
 	unsigned int down_threshold;
 	unsigned int freq_step;
+        unsigned int optimal_freq;
 };
 
 /* Common Governor data across policies */

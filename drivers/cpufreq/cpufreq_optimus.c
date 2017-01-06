@@ -82,7 +82,7 @@ static void cs_check_cpu(int cpu, unsigned int load)
 			return;
 
                 if (load < cs_tuners->up_threshold)
-                        dbs_info->requested_freq = DEF_OPTIMAL_FREQ;
+                        dbs_info->requested_freq = cs_tuners->optimal_freq;
                 else if (load >= cs_tuners->up_threshold)
                         dbs_info->requested_freq += get_freq_target(cs_tuners, policy);
 
@@ -292,12 +292,31 @@ static ssize_t store_freq_step(struct dbs_data *dbs_data, const char *buf,
 	return count;
 }
 
+static ssize_t store_optimal_freq(struct dbs_data *dbs_data, const char *buf,
+                size_t count)
+{
+        struct cs_dbs_tuners *cs_tuners = dbs_data->tuners;
+        unsigned int input;
+        int ret;
+        ret = sscanf(buf, "%u", &input);
+
+        if (ret != 1)
+                return -EINVAL;
+
+        if (input < 0)
+                input = 0;
+
+        cs_tuners->optimal_freq = input;
+        return count;
+}
+
 show_store_one(cs, sampling_rate);
 show_store_one(cs, sampling_down_factor);
 show_store_one(cs, up_threshold);
 show_store_one(cs, down_threshold);
 show_store_one(cs, ignore_nice_load);
 show_store_one(cs, freq_step);
+show_store_one(cs, optimal_freq);
 declare_show_sampling_rate_min(cs);
 
 gov_sys_pol_attr_rw(sampling_rate);
@@ -306,6 +325,7 @@ gov_sys_pol_attr_rw(up_threshold);
 gov_sys_pol_attr_rw(down_threshold);
 gov_sys_pol_attr_rw(ignore_nice_load);
 gov_sys_pol_attr_rw(freq_step);
+gov_sys_pol_attr_rw(optimal_freq);
 gov_sys_pol_attr_ro(sampling_rate_min);
 
 static struct attribute *dbs_attributes_gov_sys[] = {
@@ -316,6 +336,7 @@ static struct attribute *dbs_attributes_gov_sys[] = {
 	&down_threshold_gov_sys.attr,
 	&ignore_nice_load_gov_sys.attr,
 	&freq_step_gov_sys.attr,
+        &optimal_freq_gov_sys.attr,
 	NULL
 };
 
@@ -332,6 +353,7 @@ static struct attribute *dbs_attributes_gov_pol[] = {
 	&down_threshold_gov_pol.attr,
 	&ignore_nice_load_gov_pol.attr,
 	&freq_step_gov_pol.attr,
+        &optimal_freq_gov_pol.attr,
 	NULL
 };
 
@@ -357,6 +379,7 @@ static int cs_init(struct dbs_data *dbs_data)
 	tuners->sampling_down_factor = DEF_SAMPLING_DOWN_FACTOR;
 	tuners->ignore_nice_load = 0;
 	tuners->freq_step = DEF_FREQUENCY_STEP;
+        tuners->optimal_freq = DEF_OPTIMAL_FREQ;
 
 	dbs_data->tuners = tuners;
         dbs_data->min_sampling_rate = MICRO_FREQUENCY_MIN_SAMPLE_RATE;
