@@ -20,7 +20,7 @@
 #define DEF_FREQUENCY_STEP			(10)
 #define DEF_SAMPLING_DOWN_FACTOR		(1)
 #define MAX_SAMPLING_DOWN_FACTOR		(10)
-#define DEF_OPTIMAL_FREQ                        (998400)
+#define DEF_OPTIMAL_FREQ                        (1113600)
 #define DEF_OPTIMAL_THRESHOLD                   (60)
 #define DEFAULT_MIN_LOAD			(10)
 #define MICRO_FREQUENCY_MIN_SAMPLE_RATE	        (10000)
