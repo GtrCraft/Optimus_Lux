@@ -22,8 +22,8 @@
 #define MAX_SAMPLING_DOWN_FACTOR		(10)
 #define DEF_OPTIMAL_FREQ                        (1113600)
 #define DEF_OPTIMAL_THRESHOLD                   (60)
-#define DEFAULT_MIN_LOAD			(10)
-#define MICRO_FREQUENCY_MIN_SAMPLE_RATE	        (10000)
+#define DEFAULT_MIN_LOAD			(5)
+#define MICRO_FREQUENCY_MIN_SAMPLE_RATE	        (20000)
 
 static DEFINE_PER_CPU(struct cs_cpu_dbs_info_s, cs_cpu_dbs_info);
 
