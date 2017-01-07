@@ -39,6 +39,14 @@ on property:sys.boot_completed=1
     chmod 0644 /sys/devices/system/cpu/cpu4/cpufreq/optimus/sampling_rate
     write /sys/devices/system/cpu/cpu4/cpufreq/optimus/sampling_rate 50000
     chmod 0444 /sys/devices/system/cpu/cpu4/cpufreq/optimus/sampling_rate
+    chown system system /sys/devices/system/cpu/cpu0/cpufreq/optimus/optimal_freq
+    chmod 0644 /sys/devices/system/cpu/cpu0/cpufreq/optimus/optimal_freq
+    write /sys/devices/system/cpu/cpu0/cpufreq/optimus/optimal_freq 1113600
+    chmod 0444 /sys/devices/system/cpu/cpu0/cpufreq/optimus/optimal_freq
+    chown system system /sys/devices/system/cpu/cpu4/cpufreq/optimus/optimal_freq
+    chmod 0644 /sys/devices/system/cpu/cpu4/cpufreq/optimus/optimal_freq
+    write /sys/devices/system/cpu/cpu4/cpufreq/optimus/optimal_freq 998400
+    chmod 0444 /sys/devices/system/cpu/cpu4/cpufreq/optimus/optimal_freq
 
     # Set I/O Scheduler tweaks
     write /sys/block/mmcblk0/queue/rq_affinity 0
