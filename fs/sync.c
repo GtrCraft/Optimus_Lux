@@ -203,11 +203,11 @@ int vfs_fsync_range(struct file *file, loff_t start, loff_t end, int datasync)
 #ifdef CONFIG_DYNAMIC_FSYNC
 	if (likely(dyn_fsync_active && !dyn_sync_scr_suspended))
 		return 0;
-	else {
+        else {
 #endif
-		if (!file->f_op || !file->f_op->fsync)
-			return -EINVAL;
-		return file->f_op->fsync(file, start, end, datasync);
+	if (!file->f_op || !file->f_op->fsync)
+		return -EINVAL;
+	return file->f_op->fsync(file, start, end, datasync);
 #ifdef CONFIG_DYNAMIC_FSYNC
 	}
 #endif
@@ -245,13 +245,18 @@ SYSCALL_DEFINE1(fsync, unsigned int, fd)
 #ifdef CONFIG_DYNAMIC_FSYNC
 	if (likely(dyn_fsync_active && !dyn_sync_scr_suspended))
 		return 0;
-	else
+        else
 #endif
-		return do_fsync(fd, 0);
+	return do_fsync(fd, 0);
 }
 
 SYSCALL_DEFINE1(fdatasync, unsigned int, fd)
 {
+#ifdef CONFIG_DYNAMIC_FSYNC
+	if (likely(dyn_fsync_active && !dyn_sync_scr_suspended))
+		return 0;
+        else
+#endif
 	return do_fsync(fd, 1);
 }
 
@@ -325,90 +330,92 @@ SYSCALL_DEFINE4(sync_file_range, int, fd, loff_t, offset, loff_t, nbytes,
 #ifdef CONFIG_DYNAMIC_FSYNC
 	if (likely(dyn_fsync_active && !dyn_sync_scr_suspended))
 		return 0;
-	else {
+        else {
 #endif
-		int ret;
-		struct fd f;
-		struct address_space *mapping;
-		loff_t endbyte;			/* inclusive */
-		umode_t i_mode;
 
+	int ret;
+	struct fd f;
+	struct address_space *mapping;
+	loff_t endbyte;			/* inclusive */
+	umode_t i_mode;
+
+	ret = -EINVAL;
+	if (flags & ~VALID_FLAGS)
+		goto out;
+
+	endbyte = offset + nbytes;
+
+	if ((s64)offset < 0)
+		goto out;
+	if ((s64)endbyte < 0)
+		goto out;
+	if (endbyte < offset)
+		goto out;
+
+	if (sizeof(pgoff_t) == 4) {
+		if (offset >= (0x100000000ULL << PAGE_CACHE_SHIFT)) {
+			/*
+			 * The range starts outside a 32 bit machine's
+			 * pagecache addressing capabilities.  Let it "succeed"
+			 */
+			ret = 0;
+			goto out;
+		}
+		if (endbyte >= (0x100000000ULL << PAGE_CACHE_SHIFT)) {
+			/*
+			 * Out to EOF
+			 */
+			nbytes = 0;
+		}
+	}
+
+	if (nbytes == 0)
+		endbyte = LLONG_MAX;
+	else
+		endbyte--;		/* inclusive */
+
+	ret = -EBADF;
+	f = fdget(fd);
+	if (!f.file)
+		goto out;
+
+	i_mode = file_inode(f.file)->i_mode;
+	ret = -ESPIPE;
+	if (!S_ISREG(i_mode) && !S_ISBLK(i_mode) && !S_ISDIR(i_mode) &&
+			!S_ISLNK(i_mode))
+		goto out_put;
+
+	mapping = f.file->f_mapping;
+	if (!mapping) {
 		ret = -EINVAL;
-		if (flags & ~VALID_FLAGS)
-			goto out;
+		goto out_put;
+	}
 
-		endbyte = offset + nbytes;
-
-		if ((s64)offset < 0)
-			goto out;
-		if ((s64)endbyte < 0)
-			goto out;
-		if (endbyte < offset)
-			goto out;
-
-		if (sizeof(pgoff_t) == 4) {
-			if (offset >= (0x100000000ULL << PAGE_CACHE_SHIFT)) {
-				/*
-				 * The range starts outside a 32 bit machine's
-				 * pagecache addressing capabilities.  Let it "succeed"
-				 */
-				ret = 0;
-				goto out;
-			}
-			if (endbyte >= (0x100000000ULL << PAGE_CACHE_SHIFT)) {
-				/*
-				 * Out to EOF
-				 */
-				nbytes = 0;
-			}
-		}
-
-		if (nbytes == 0)
-			endbyte = LLONG_MAX;
-		else
-			endbyte--;		/* inclusive */
-
-		ret = -EBADF;
-		f = fdget(fd);
-		if (!f.file)
-			goto out;
-
-		i_mode = file_inode(f.file)->i_mode;
-		ret = -ESPIPE;
-		if (!S_ISREG(i_mode) && !S_ISBLK(i_mode) && !S_ISDIR(i_mode) &&
-				!S_ISLNK(i_mode))
+	ret = 0;
+	if (flags & SYNC_FILE_RANGE_WAIT_BEFORE) {
+		ret = filemap_fdatawait_range(mapping, offset, endbyte);
+		if (ret < 0)
 			goto out_put;
+	}
 
-		mapping = f.file->f_mapping;
-		if (!mapping) {
-			ret = -EINVAL;
+	if (flags & SYNC_FILE_RANGE_WRITE) {
+		ret = __filemap_fdatawrite_range(mapping, offset, endbyte,
+						 WB_SYNC_NONE);
+		if (ret < 0)
 			goto out_put;
-		}
+	}
 
-		ret = 0;
-		if (flags & SYNC_FILE_RANGE_WAIT_BEFORE) {
-			ret = filemap_fdatawait_range(mapping, offset, endbyte);
-			if (ret < 0)
-				goto out_put;
-		}
+	if (flags & SYNC_FILE_RANGE_WAIT_AFTER)
+		ret = filemap_fdatawait_range(mapping, offset, endbyte);
 
-		if (flags & SYNC_FILE_RANGE_WRITE) {
-			ret = filemap_fdatawrite_range(mapping, offset, endbyte);
-			if (ret < 0)
-				goto out_put;
-		}
-
-		if (flags & SYNC_FILE_RANGE_WAIT_AFTER)
-			ret = filemap_fdatawait_range(mapping, offset, endbyte);
-
-	out_put:
-		fdput(f);
-	out:
-		return ret;
+out_put:
+	fdput(f);
+out:
+	return ret;
+}
 #ifdef CONFIG_DYNAMIC_FSYNC
 	}
 #endif
-}
 
 /* It would be nice if people remember that not all the world's an i386
    when they introduce new system calls */
@@ -418,7 +425,7 @@ SYSCALL_DEFINE4(sync_file_range2, int, fd, unsigned int, flags,
 #ifdef CONFIG_DYNAMIC_FSYNC
 	if (likely(dyn_fsync_active && !dyn_sync_scr_suspended))
 		return 0;
-	else
+        else
 #endif
-		return sys_sync_file_range(fd, offset, nbytes, flags);
+	return sys_sync_file_range(fd, offset, nbytes, flags);
 }
