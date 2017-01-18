@@ -16,13 +16,6 @@ on property:sys.boot_completed=1
     write /sys/module/lpm_levels/system/cpu7/retention/idle_enabled 1
     write /sys/module/lpm_levels/system/l2-retention/idle_enabled 1
 
-    # Process Reclain
-    write /sys/module/process_reclaim/parameters/enable_process_reclaim 1
-    write /sys/module/process_reclaim/parameters/pressure_min 50
-    write /sys/module/process_reclaim/parameters/pressure_max 70
-    write /sys/module/process_reclaim/parameters/per_swap_size 512
-    write /sys/module/process_reclaim/parameters/swap_opt_eff 30
-
     # Disable some Wlan wakelocks
     write /sys/module/wakeup/parameters/enable_wlan_rx_wake_ws 0
     write /sys/module/wakeup/parameters/enable_wlan_ctrl_wake_ws 0
@@ -72,10 +65,6 @@ on property:sys.boot_completed=1
     write /proc/sys/net/ipv4/tcp_dsack 1
     write /proc/sys/net/ipv4/tcp_low_latency 1
     write /proc/sys/net/ipv4/tcp_timestamps 1
-
-    # Set UKSM configuration
-    write /sys/kernel/mm/uksm/max_cpu_percentage 20
-    write /sys/kernel/mm/uksm/run 0
  
     # Set Swappiness
     write /proc/sys/vm/swappiness 8
