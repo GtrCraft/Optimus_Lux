@@ -57,14 +57,3 @@ on property:sys.boot_completed=1
     # Misc
     write /proc/sys/kernel/random/read_wakeup_threshold 128
     write /proc/sys/kernel/random/write_wakeup_threshold 256
-
-    # suitable configuration to help reduce network latency
-    write /proc/sys/net/ipv4/tcp_congestion_control westwood
-    write /proc/sys/net/ipv4/tcp_ecn 2
-    write /proc/sys/net/ipv4/tcp_sack 1
-    write /proc/sys/net/ipv4/tcp_dsack 1
-    write /proc/sys/net/ipv4/tcp_low_latency 1
-    write /proc/sys/net/ipv4/tcp_timestamps 1
- 
-    # Set Swappiness
-    write /proc/sys/vm/swappiness 8
