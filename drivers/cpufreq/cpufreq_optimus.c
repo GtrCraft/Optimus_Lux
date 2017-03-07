@@ -12,27 +12,27 @@
  */
 
 #include <linux/slab.h>
-#include <linux/touchboost.h>
+#include <linux/display_state.h>
 #include "cpufreq_governor.h"
 
 /* optimus governor macros */
 #define DEF_FREQUENCY_UP_THRESHOLD		(90)
 #define DEF_FREQUENCY_DOWN_THRESHOLD		(40)
-#define DEF_FREQUENCY_STEP			(5)
+#define DEF_FREQUENCY_SUSPENDED_THRESHOLD    	(60)
+#define DEF_FREQUENCY_STEP			(6)
 #define DEF_SAMPLING_DOWN_FACTOR		(1)
 #define MAX_SAMPLING_DOWN_FACTOR		(10)
 #define DEF_OPTIMAL_FREQ                        (1113600)
 #define DEF_OPTIMAL_THRESHOLD                   (60)
 #define DEFAULT_MIN_LOAD			(5)
 #define MICRO_FREQUENCY_MIN_SAMPLE_RATE	        (20000)
-#define TOUCH_BOOST_DURATION_US			(40000)
 
 static DEFINE_PER_CPU(struct cs_cpu_dbs_info_s, cs_cpu_dbs_info);
 
-static inline unsigned int get_freq_target(unsigned int freq_step,
+static inline unsigned int get_freq_target(struct cs_dbs_tuners *cs_tuners,
 					   struct cpufreq_policy *policy)
 {
-	unsigned int freq_target = (freq_step * policy->max) / 100;
+	unsigned int freq_target = (cs_tuners->freq_step * policy->max) / 100;
 
 	/* max freq cannot be less than 100. But who knows... */
 	if (unlikely(freq_target == 0))
@@ -56,8 +56,13 @@ static void cs_check_cpu(int cpu, unsigned int load)
 	struct cpufreq_policy *policy = dbs_info->cdbs.cur_policy;
 	struct dbs_data *dbs_data = policy->governor_data;
 	struct cs_dbs_tuners *cs_tuners = dbs_data->tuners;
-        bool boosted;
- 	u64 now;
+
+        /* Create display state boolean */
+	bool display_on = is_display_on();
+
+	/* Break out early once min freq reached during screen off */
+	if (!display_on && policy->cur == policy->min)
+		return;
 
 	/*
 	 * break out if we 'cannot' reduce the speed as the user might
@@ -68,7 +73,7 @@ static void cs_check_cpu(int cpu, unsigned int load)
 
         if (dbs_info->cdbs.deferred_periods < UINT_MAX) {
 		unsigned int freq_target = dbs_info->cdbs.deferred_periods *
-				get_freq_target(cs_tuners->freq_step, policy);
+				get_freq_target(cs_tuners, policy);
 		if (dbs_info->requested_freq > freq_target)
 			dbs_info->requested_freq -= freq_target;
 		else
@@ -76,12 +81,8 @@ static void cs_check_cpu(int cpu, unsigned int load)
 		dbs_info->cdbs.deferred_periods = UINT_MAX;
 	}
 
-        now = ktime_to_us(ktime_get());
-	boosted = now < (get_input_time() + cs_tuners->touch_boost_duration);
-
 	/* Check for frequency increase */
-        if (load > DEF_OPTIMAL_THRESHOLD) {
-                unsigned int freq_step = cs_tuners->freq_step;
+        if (display_on && load > DEF_OPTIMAL_THRESHOLD) {
 		if (load >= cs_tuners->up_threshold)
 			dbs_info->down_skip = 0;
 
@@ -91,11 +92,8 @@ static void cs_check_cpu(int cpu, unsigned int load)
 
                 if (load < cs_tuners->up_threshold)
                         dbs_info->requested_freq = cs_tuners->optimal_freq;
-                else if (load >= cs_tuners->up_threshold) {
-                        if (boosted)
-               		freq_step *= 2;
-		        dbs_info->requested_freq += get_freq_target(freq_step, policy);
-                }
+                else if (load >= cs_tuners->up_threshold)
+                        dbs_info->requested_freq += get_freq_target(cs_tuners, policy);
 
 		if (dbs_info->requested_freq > policy->max)
 			dbs_info->requested_freq = policy->max;
@@ -111,7 +109,7 @@ static void cs_check_cpu(int cpu, unsigned int load)
 	dbs_info->down_skip = 0;
 
 	/* Check for frequency decrease */
-	if (load < cs_tuners->down_threshold) {
+	if (display_on && load < cs_tuners->down_threshold) {
 		unsigned int freq_target;
 		/*
 		 * if we cannot reduce the frequency anymore, break out early
@@ -124,13 +122,30 @@ static void cs_check_cpu(int cpu, unsigned int load)
  			goto scale_down;
  		}
 
-		freq_target = get_freq_target(cs_tuners->freq_step, policy);
+		freq_target = get_freq_target(cs_tuners, policy);
 		if (dbs_info->requested_freq > freq_target)
 			dbs_info->requested_freq -= freq_target;
 		else
 			dbs_info->requested_freq = policy->min;
 
 scale_down:
+
+		__cpufreq_driver_target(policy, dbs_info->requested_freq,
+				CPUFREQ_RELATION_L);
+		return;
+        } else if (!display_on && load <= DEF_FREQUENCY_SUSPENDED_THRESHOLD) {
+                unsigned int freq_target;
+		/*
+		 * if we cannot reduce the frequency anymore, break out early
+		 */
+		if (policy->cur == policy->min)
+			return;
+
+		freq_target = get_freq_target(cs_tuners, policy);
+		if (dbs_info->requested_freq > freq_target)
+			dbs_info->requested_freq -= freq_target;
+		else
+			dbs_info->requested_freq = policy->min;
 
 		__cpufreq_driver_target(policy, dbs_info->requested_freq,
 				CPUFREQ_RELATION_L);
@@ -321,24 +336,6 @@ static ssize_t store_optimal_freq(struct dbs_data *dbs_data, const char *buf,
         return count;
 }
 
-static ssize_t store_touch_boost_duration(struct dbs_data *dbs_data, const char *buf,
-                size_t count)
-{
-        struct cs_dbs_tuners *cs_tuners = dbs_data->tuners;
-        unsigned int input;
-        int ret;
-        ret = sscanf(buf, "%u", &input);
-
-        if (ret != 1)
-                return -EINVAL;
-
-        if (input < 0)
-                input = 0;
-
-        cs_tuners->touch_boost_duration = input;
-        return count;
-}
-
 show_store_one(cs, sampling_rate);
 show_store_one(cs, sampling_down_factor);
 show_store_one(cs, up_threshold);
@@ -346,7 +343,6 @@ show_store_one(cs, down_threshold);
 show_store_one(cs, ignore_nice_load);
 show_store_one(cs, freq_step);
 show_store_one(cs, optimal_freq);
-show_store_one(cs, touch_boost_duration);
 declare_show_sampling_rate_min(cs);
 
 gov_sys_pol_attr_rw(sampling_rate);
@@ -356,7 +352,6 @@ gov_sys_pol_attr_rw(down_threshold);
 gov_sys_pol_attr_rw(ignore_nice_load);
 gov_sys_pol_attr_rw(freq_step);
 gov_sys_pol_attr_rw(optimal_freq);
-gov_sys_pol_attr_rw(touch_boost_duration);
 gov_sys_pol_attr_ro(sampling_rate_min);
 
 static struct attribute *dbs_attributes_gov_sys[] = {
@@ -368,7 +363,6 @@ static struct attribute *dbs_attributes_gov_sys[] = {
 	&ignore_nice_load_gov_sys.attr,
 	&freq_step_gov_sys.attr,
         &optimal_freq_gov_sys.attr,
-        &touch_boost_duration_gov_sys.attr,
 	NULL
 };
 
@@ -386,7 +380,6 @@ static struct attribute *dbs_attributes_gov_pol[] = {
 	&ignore_nice_load_gov_pol.attr,
 	&freq_step_gov_pol.attr,
         &optimal_freq_gov_pol.attr,
-        &touch_boost_duration_gov_pol.attr,
 	NULL
 };
 
@@ -413,7 +406,6 @@ static int cs_init(struct dbs_data *dbs_data)
 	tuners->ignore_nice_load = 0;
 	tuners->freq_step = DEF_FREQUENCY_STEP;
         tuners->optimal_freq = DEF_OPTIMAL_FREQ;
-        tuners->touch_boost_duration = TOUCH_BOOST_DURATION_US;
 
 	dbs_data->tuners = tuners;
         dbs_data->min_sampling_rate = MICRO_FREQUENCY_MIN_SAMPLE_RATE;

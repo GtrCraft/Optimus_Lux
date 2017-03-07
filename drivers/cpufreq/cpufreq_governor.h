@@ -188,7 +188,6 @@ struct cs_dbs_tuners {
 	unsigned int down_threshold;
 	unsigned int freq_step;
         unsigned int optimal_freq;
-        unsigned int touch_boost_duration;
 };
 
 /* Common Governor data across policies */

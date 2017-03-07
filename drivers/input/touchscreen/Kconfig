@@ -1093,11 +1093,4 @@ config TOUCHSCREEN_TOUCHX
 
 	  To compile this driver as a module, choose M here: the
 	  module will be called touchx.
-
-config TOUCHBOOST_CONTROL
-	bool "Touch boost control"
-	depends on INPUT_TOUCHSCREEN
-	help
-          Simple Touch Boost Driver.
-
 endif
