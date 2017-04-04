@@ -8,7 +8,7 @@
 
 ## Copy this script inside the kernel directory
 KERNEL_DIR=/home/nickv/data/optimus/kernel
-KERNEL_TOOLCHAIN=/home/nickv/data/optimus/prebuilts/arm-eabi-4.9/bin/arm-eabi-
+KERNEL_TOOLCHAIN=/home/nickv/data/optimus/prebuilts/arm-eabi-5.x/bin/arm-eabi-
 KERNEL_DEFCONFIG=lux_defconfig
 DTBTOOL=$KERNEL_DIR/Dtbtool/
 JOBS=16
