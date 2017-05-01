@@ -13,7 +13,7 @@ KERNEL_DEFCONFIG=lux_defconfig
 DTBTOOL=$KERNEL_DIR/Dtbtool/
 JOBS=16
 ANY_KERNEL2_DIR=$KERNEL_DIR/Anykernel2
-FINAL_KERNEL_ZIP=Optimus-R21-Lux.zip
+FINAL_KERNEL_ZIP=Optimus-R21.1-Lux.zip
 
 # Clean build always lol
 echo "**** Cleaning ****"
