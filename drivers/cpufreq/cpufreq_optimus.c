@@ -12,14 +12,12 @@
  */
 
 #include <linux/slab.h>
-#include <linux/display_state.h>
 #include "cpufreq_governor.h"
 
 /* optimus governor macros */
 #define DEF_FREQUENCY_UP_THRESHOLD		(90)
 #define DEF_FREQUENCY_DOWN_THRESHOLD		(40)
-#define DEF_FREQUENCY_SUSPENDED_THRESHOLD    	(60)
-#define DEF_FREQUENCY_STEP			(6)
+#define DEF_FREQUENCY_STEP			(10)
 #define DEF_SAMPLING_DOWN_FACTOR		(1)
 #define MAX_SAMPLING_DOWN_FACTOR		(10)
 #define DEF_OPTIMAL_FREQ                        (1113600)
@@ -57,13 +55,6 @@ static void cs_check_cpu(int cpu, unsigned int load)
 	struct dbs_data *dbs_data = policy->governor_data;
 	struct cs_dbs_tuners *cs_tuners = dbs_data->tuners;
 
-        /* Create display state boolean */
-	bool display_on = is_display_on();
-
-	/* Break out early once min freq reached during screen off */
-	if (!display_on && policy->cur == policy->min)
-		return;
-
 	/*
 	 * break out if we 'cannot' reduce the speed as the user might
 	 * want freq_step to be zero
@@ -82,7 +73,7 @@ static void cs_check_cpu(int cpu, unsigned int load)
 	}
 
 	/* Check for frequency increase */
-        if (display_on && load > DEF_OPTIMAL_THRESHOLD) {
+        if (load > DEF_OPTIMAL_THRESHOLD) {
 		if (load >= cs_tuners->up_threshold)
 			dbs_info->down_skip = 0;
 
@@ -109,7 +100,7 @@ static void cs_check_cpu(int cpu, unsigned int load)
 	dbs_info->down_skip = 0;
 
 	/* Check for frequency decrease */
-	if (display_on && load < cs_tuners->down_threshold) {
+	if (load < cs_tuners->down_threshold) {
 		unsigned int freq_target;
 		/*
 		 * if we cannot reduce the frequency anymore, break out early
@@ -129,23 +120,6 @@ static void cs_check_cpu(int cpu, unsigned int load)
 			dbs_info->requested_freq = policy->min;
 
 scale_down:
-
-		__cpufreq_driver_target(policy, dbs_info->requested_freq,
-				CPUFREQ_RELATION_L);
-		return;
-        } else if (!display_on && load <= DEF_FREQUENCY_SUSPENDED_THRESHOLD) {
-                unsigned int freq_target;
-		/*
-		 * if we cannot reduce the frequency anymore, break out early
-		 */
-		if (policy->cur == policy->min)
-			return;
-
-		freq_target = get_freq_target(cs_tuners, policy);
-		if (dbs_info->requested_freq > freq_target)
-			dbs_info->requested_freq -= freq_target;
-		else
-			dbs_info->requested_freq = policy->min;
 
 		__cpufreq_driver_target(policy, dbs_info->requested_freq,
 				CPUFREQ_RELATION_L);
